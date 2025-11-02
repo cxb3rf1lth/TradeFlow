@@ -1,0 +1,30 @@
+services:
+  # Web Service - Express + React App
+  - type: web
+    name: tradeflow
+    runtime: node
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tradeflow-db
+          property: connectionString
+      - key: RESEND_API_KEY
+        sync: false
+    healthCheckPath: /
+
+databases:
+  # PostgreSQL Database
+  - name: tradeflow-db
+    databaseName: tradeflow
+    user: tradeflow
+    region: oregon
+    plan: free
