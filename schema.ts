@@ -486,6 +486,310 @@ export const auditLogs = pgTable("audit_logs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Microsoft 365 Integration - OneDrive
+export const oneDriveFiles = pgTable("onedrive_files", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  microsoftId: text("microsoft_id").notNull(),
+  name: text("name").notNull(),
+  path: text("path").notNull(),
+  type: text("type").notNull(), // file or folder
+  mimeType: text("mime_type"),
+  size: integer("size"),
+  parentId: varchar("parent_id"),
+  driveId: text("drive_id").notNull(),
+  webUrl: text("web_url"),
+  downloadUrl: text("download_url"),
+  thumbnailUrl: text("thumbnail_url"),
+  sharedWith: jsonb("shared_with").default(sql`'[]'::jsonb`),
+  permissions: jsonb("permissions").default(sql`'[]'::jsonb`),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`),
+  isShared: boolean("is_shared").notNull().default(false),
+  isSynced: boolean("is_synced").notNull().default(true),
+  lastModifiedBy: text("last_modified_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  lastSyncedAt: timestamp("last_synced_at"),
+});
+
+export const oneDriveSyncQueue = pgTable("onedrive_sync_queue", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  fileId: varchar("file_id").notNull(),
+  action: text("action").notNull(), // upload, download, delete, update
+  status: text("status").notNull().default("pending"),
+  priority: integer("priority").notNull().default(0),
+  retryCount: integer("retry_count").notNull().default(0),
+  error: text("error"),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`),
+  createdAt: timestamp("created_at").defaultNow(),
+  processedAt: timestamp("processed_at"),
+});
+
+// Microsoft 365 Integration - OneNote
+export const oneNoteNotebooks = pgTable("onenote_notebooks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  microsoftId: text("microsoft_id").notNull().unique(),
+  displayName: text("display_name").notNull(),
+  isDefault: boolean("is_default").notNull().default(false),
+  isShared: boolean("is_shared").notNull().default(false),
+  webUrl: text("web_url"),
+  color: text("color"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  lastSyncedAt: timestamp("last_synced_at"),
+});
+
+export const oneNoteSections = pgTable("onenote_sections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  notebookId: varchar("notebook_id").notNull(),
+  microsoftId: text("microsoft_id").notNull().unique(),
+  displayName: text("display_name").notNull(),
+  order: integer("order").notNull().default(0),
+  webUrl: text("web_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  lastSyncedAt: timestamp("last_synced_at"),
+});
+
+export const oneNotePages = pgTable("onenote_pages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sectionId: varchar("section_id").notNull(),
+  microsoftId: text("microsoft_id").notNull().unique(),
+  title: text("title").notNull(),
+  content: text("content"),
+  contentUrl: text("content_url"),
+  level: integer("level").notNull().default(0),
+  order: integer("order").notNull().default(0),
+  webUrl: text("web_url"),
+  tags: jsonb("tags").default(sql`'[]'::jsonb`),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  lastSyncedAt: timestamp("last_synced_at"),
+});
+
+// Microsoft 365 Integration - Outlook
+export const outlookCalendars = pgTable("outlook_calendars", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  microsoftId: text("microsoft_id").notNull().unique(),
+  name: text("name").notNull(),
+  color: text("color"),
+  isDefault: boolean("is_default").notNull().default(false),
+  canEdit: boolean("can_edit").notNull().default(true),
+  canShare: boolean("can_share").notNull().default(true),
+  owner: jsonb("owner").default(sql`'{}'::jsonb`),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  lastSyncedAt: timestamp("last_synced_at"),
+});
+
+export const outlookEvents = pgTable("outlook_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  calendarId: varchar("calendar_id").notNull(),
+  microsoftId: text("microsoft_id").notNull().unique(),
+  subject: text("subject").notNull(),
+  body: text("body"),
+  bodyPreview: text("body_preview"),
+  location: text("location"),
+  attendees: jsonb("attendees").default(sql`'[]'::jsonb`),
+  organizer: jsonb("organizer").default(sql`'{}'::jsonb`),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  isAllDay: boolean("is_all_day").notNull().default(false),
+  isCancelled: boolean("is_cancelled").notNull().default(false),
+  isOnline: boolean("is_online").notNull().default(false),
+  onlineMeetingUrl: text("online_meeting_url"),
+  recurrence: jsonb("recurrence"),
+  reminder: integer("reminder"), // minutes before
+  importance: text("importance").notNull().default("normal"),
+  sensitivity: text("sensitivity").notNull().default("normal"),
+  showAs: text("show_as").notNull().default("busy"),
+  webUrl: text("web_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  lastSyncedAt: timestamp("last_synced_at"),
+});
+
+export const outlookContacts = pgTable("outlook_contacts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  microsoftId: text("microsoft_id").notNull().unique(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  displayName: text("display_name").notNull(),
+  emailAddresses: jsonb("email_addresses").default(sql`'[]'::jsonb`),
+  phoneNumbers: jsonb("phone_numbers").default(sql`'[]'::jsonb`),
+  companyName: text("company_name"),
+  jobTitle: text("job_title"),
+  department: text("department"),
+  birthday: timestamp("birthday"),
+  businessAddress: jsonb("business_address").default(sql`'{}'::jsonb`),
+  homeAddress: jsonb("home_address").default(sql`'{}'::jsonb`),
+  categories: jsonb("categories").default(sql`'[]'::jsonb`),
+  notes: text("notes"),
+  linkedContactId: varchar("linked_contact_id"), // Link to CRM contact
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  lastSyncedAt: timestamp("last_synced_at"),
+});
+
+export const outlookEmails = pgTable("outlook_emails", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  microsoftId: text("microsoft_id").notNull().unique(),
+  conversationId: text("conversation_id"),
+  subject: text("subject").notNull(),
+  bodyPreview: text("body_preview"),
+  body: text("body").notNull(),
+  from: jsonb("from").notNull(),
+  toRecipients: jsonb("to_recipients").default(sql`'[]'::jsonb`),
+  ccRecipients: jsonb("cc_recipients").default(sql`'[]'::jsonb`),
+  bccRecipients: jsonb("bcc_recipients").default(sql`'[]'::jsonb`),
+  replyTo: jsonb("reply_to").default(sql`'[]'::jsonb`),
+  hasAttachments: boolean("has_attachments").notNull().default(false),
+  attachments: jsonb("attachments").default(sql`'[]'::jsonb`),
+  importance: text("importance").notNull().default("normal"),
+  isRead: boolean("is_read").notNull().default(false),
+  isDraft: boolean("is_draft").notNull().default(false),
+  flag: jsonb("flag").default(sql`'{}'::jsonb`),
+  categories: jsonb("categories").default(sql`'[]'::jsonb`),
+  receivedDateTime: timestamp("received_date_time").notNull(),
+  sentDateTime: timestamp("sent_date_time"),
+  webUrl: text("web_url"),
+  linkedThreadId: varchar("linked_thread_id"), // Link to email threads
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  lastSyncedAt: timestamp("last_synced_at"),
+});
+
+// Microsoft 365 Integration - Teams
+export const teamsChannels = pgTable("teams_channels", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  teamId: text("team_id").notNull(),
+  microsoftId: text("microsoft_id").notNull().unique(),
+  displayName: text("display_name").notNull(),
+  description: text("description"),
+  email: text("email"),
+  webUrl: text("web_url"),
+  isFavorite: boolean("is_favorite").notNull().default(false),
+  membershipType: text("membership_type").notNull().default("standard"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  lastSyncedAt: timestamp("last_synced_at"),
+});
+
+export const teamsMessages = pgTable("teams_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  channelId: varchar("channel_id").notNull(),
+  microsoftId: text("microsoft_id").notNull().unique(),
+  messageType: text("message_type").notNull().default("message"),
+  subject: text("subject"),
+  body: text("body").notNull(),
+  from: jsonb("from").notNull(),
+  mentions: jsonb("mentions").default(sql`'[]'::jsonb`),
+  attachments: jsonb("attachments").default(sql`'[]'::jsonb`),
+  reactions: jsonb("reactions").default(sql`'[]'::jsonb`),
+  importance: text("importance").notNull().default("normal"),
+  replyToId: varchar("reply_to_id"),
+  webUrl: text("web_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
+  lastSyncedAt: timestamp("last_synced_at"),
+});
+
+export const teamsChats = pgTable("teams_chats", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  microsoftId: text("microsoft_id").notNull().unique(),
+  chatType: text("chat_type").notNull(), // oneOnOne, group, meeting
+  topic: text("topic"),
+  members: jsonb("members").default(sql`'[]'::jsonb`),
+  webUrl: text("web_url"),
+  lastMessageAt: timestamp("last_message_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  lastSyncedAt: timestamp("last_synced_at"),
+});
+
+export const teamsChatMessages = pgTable("teams_chat_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  chatId: varchar("chat_id").notNull(),
+  microsoftId: text("microsoft_id").notNull().unique(),
+  messageType: text("message_type").notNull().default("message"),
+  body: text("body").notNull(),
+  from: jsonb("from").notNull(),
+  mentions: jsonb("mentions").default(sql`'[]'::jsonb`),
+  attachments: jsonb("attachments").default(sql`'[]'::jsonb`),
+  reactions: jsonb("reactions").default(sql`'[]'::jsonb`),
+  importance: text("importance").notNull().default("normal"),
+  replyToId: varchar("reply_to_id"),
+  webUrl: text("web_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
+  lastSyncedAt: timestamp("last_synced_at"),
+});
+
+export const teamsMeetings = pgTable("teams_meetings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  microsoftId: text("microsoft_id").notNull().unique(),
+  outlookEventId: varchar("outlook_event_id"), // Link to calendar event
+  subject: text("subject").notNull(),
+  joinUrl: text("join_url"),
+  chatId: varchar("chat_id"),
+  participants: jsonb("participants").default(sql`'[]'::jsonb`),
+  organizer: jsonb("organizer").notNull(),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  isRecurring: boolean("is_recurring").notNull().default(false),
+  recordingUrl: text("recording_url"),
+  transcriptUrl: text("transcript_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  lastSyncedAt: timestamp("last_synced_at"),
+});
+
+// Claude AI Integration
+export const aiConversations = pgTable("ai_conversations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  title: text("title").notNull(),
+  context: text("context"), // What the conversation is about
+  relatedTo: text("related_to"), // Entity type
+  relatedId: varchar("related_id"), // Entity ID
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const aiMessages = pgTable("ai_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  conversationId: varchar("conversation_id").notNull(),
+  role: text("role").notNull(), // user, assistant, system
+  content: text("content").notNull(),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`),
+  tokens: integer("tokens"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const aiInsights = pgTable("ai_insights", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  type: text("type").notNull(), // email_summary, sentiment_analysis, action_items, etc.
+  entityType: text("entity_type").notNull(),
+  entityId: varchar("entity_id").notNull(),
+  insight: text("insight").notNull(),
+  confidence: decimal("confidence", { precision: 3, scale: 2 }),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`),
+  isApplied: boolean("is_applied").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true });
@@ -537,6 +841,28 @@ export const insertEmailRuleSchema = createInsertSchema(emailRules).omit({ id: t
 
 export const insertApiKeySchema = createInsertSchema(apiKeys).omit({ id: true, createdAt: true });
 export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: true, createdAt: true });
+
+export const insertOneDriveFileSchema = createInsertSchema(oneDriveFiles).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertOneDriveSyncQueueSchema = createInsertSchema(oneDriveSyncQueue).omit({ id: true, createdAt: true });
+
+export const insertOneNoteNotebookSchema = createInsertSchema(oneNoteNotebooks).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertOneNoteSectionSchema = createInsertSchema(oneNoteSections).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertOneNotePageSchema = createInsertSchema(oneNotePages).omit({ id: true, createdAt: true, updatedAt: true });
+
+export const insertOutlookCalendarSchema = createInsertSchema(outlookCalendars).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertOutlookEventSchema = createInsertSchema(outlookEvents).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertOutlookContactSchema = createInsertSchema(outlookContacts).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertOutlookEmailSchema = createInsertSchema(outlookEmails).omit({ id: true, createdAt: true, updatedAt: true });
+
+export const insertTeamsChannelSchema = createInsertSchema(teamsChannels).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTeamsMessageSchema = createInsertSchema(teamsMessages).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTeamsChatSchema = createInsertSchema(teamsChats).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTeamsChatMessageSchema = createInsertSchema(teamsChatMessages).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTeamsMeetingSchema = createInsertSchema(teamsMeetings).omit({ id: true, createdAt: true, updatedAt: true });
+
+export const insertAiConversationSchema = createInsertSchema(aiConversations).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAiMessageSchema = createInsertSchema(aiMessages).omit({ id: true, createdAt: true });
+export const insertAiInsightSchema = createInsertSchema(aiInsights).omit({ id: true, createdAt: true });
 
 // Type Exports
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -628,3 +954,42 @@ export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 export type AuditLog = typeof auditLogs.$inferSelect;
+
+export type InsertOneDriveFile = z.infer<typeof insertOneDriveFileSchema>;
+export type OneDriveFile = typeof oneDriveFiles.$inferSelect;
+export type InsertOneDriveSyncQueue = z.infer<typeof insertOneDriveSyncQueueSchema>;
+export type OneDriveSyncQueue = typeof oneDriveSyncQueue.$inferSelect;
+
+export type InsertOneNoteNotebook = z.infer<typeof insertOneNoteNotebookSchema>;
+export type OneNoteNotebook = typeof oneNoteNotebooks.$inferSelect;
+export type InsertOneNoteSection = z.infer<typeof insertOneNoteSectionSchema>;
+export type OneNoteSection = typeof oneNoteSections.$inferSelect;
+export type InsertOneNotePage = z.infer<typeof insertOneNotePageSchema>;
+export type OneNotePage = typeof oneNotePages.$inferSelect;
+
+export type InsertOutlookCalendar = z.infer<typeof insertOutlookCalendarSchema>;
+export type OutlookCalendar = typeof outlookCalendars.$inferSelect;
+export type InsertOutlookEvent = z.infer<typeof insertOutlookEventSchema>;
+export type OutlookEvent = typeof outlookEvents.$inferSelect;
+export type InsertOutlookContact = z.infer<typeof insertOutlookContactSchema>;
+export type OutlookContact = typeof outlookContacts.$inferSelect;
+export type InsertOutlookEmail = z.infer<typeof insertOutlookEmailSchema>;
+export type OutlookEmail = typeof outlookEmails.$inferSelect;
+
+export type InsertTeamsChannel = z.infer<typeof insertTeamsChannelSchema>;
+export type TeamsChannel = typeof teamsChannels.$inferSelect;
+export type InsertTeamsMessage = z.infer<typeof insertTeamsMessageSchema>;
+export type TeamsMessage = typeof teamsMessages.$inferSelect;
+export type InsertTeamsChat = z.infer<typeof insertTeamsChatSchema>;
+export type TeamsChat = typeof teamsChats.$inferSelect;
+export type InsertTeamsChatMessage = z.infer<typeof insertTeamsChatMessageSchema>;
+export type TeamsChatMessage = typeof teamsChatMessages.$inferSelect;
+export type InsertTeamsMeeting = z.infer<typeof insertTeamsMeetingSchema>;
+export type TeamsMeeting = typeof teamsMeetings.$inferSelect;
+
+export type InsertAiConversation = z.infer<typeof insertAiConversationSchema>;
+export type AiConversation = typeof aiConversations.$inferSelect;
+export type InsertAiMessage = z.infer<typeof insertAiMessageSchema>;
+export type AiMessage = typeof aiMessages.$inferSelect;
+export type InsertAiInsight = z.infer<typeof insertAiInsightSchema>;
+export type AiInsight = typeof aiInsights.$inferSelect;
