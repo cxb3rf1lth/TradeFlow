@@ -28,6 +28,10 @@ import Notes from "@/pages/notes";
 import TeamLounge from "@/pages/team-lounge";
 import NetSuite from "@/pages/netsuite";
 import NotFound from "@/pages/not-found";
+import Tasks from "@/pages/tasks";
+import Analytics from "@/pages/analytics";
+import Settings from "@/pages/settings";
+import { useGlobalShortcuts } from "@/hooks/use-keyboard-shortcuts";
 
 const pageNames: Record<string, string> = {
   "/": "Dashboard",
@@ -48,8 +52,8 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
-      <Route path="/tasks" component={() => <div className="p-6"><h1 className="text-2xl font-semibold">Tasks</h1><p className="text-muted-foreground mt-2">Task management page coming soon...</p></div>} />
-      <Route path="/analytics" component={() => <div className="p-6"><h1 className="text-2xl font-semibold">Analytics</h1><p className="text-muted-foreground mt-2">Analytics dashboard coming soon...</p></div>} />
+      <Route path="/tasks" component={Tasks} />
+      <Route path="/analytics" component={Analytics} />
       <Route path="/communications" component={() => <div className="p-6"><h1 className="text-2xl font-semibold">Communications</h1><p className="text-muted-foreground mt-2">Team communications coming soon...</p></div>} />
       <Route path="/documents" component={() => <div className="p-6"><h1 className="text-2xl font-semibold">Documents</h1><p className="text-muted-foreground mt-2">Document management coming soon...</p></div>} />
       <Route path="/notes" component={Notes} />
@@ -58,7 +62,7 @@ function Router() {
       <Route path="/automation" component={() => <div className="p-6"><h1 className="text-2xl font-semibold">Automation</h1><p className="text-muted-foreground mt-2">Automation rules coming soon...</p></div>} />
       <Route path="/email" component={EmailCenter} />
       <Route path="/netsuite" component={NetSuite} />
-      <Route path="/settings" component={() => <div className="p-6"><h1 className="text-2xl font-semibold">Settings</h1><p className="text-muted-foreground mt-2">Settings page coming soon...</p></div>} />
+      <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -92,7 +96,10 @@ function NavigationBreadcrumb() {
 
 export default function App() {
   const [userRole, setUserRole] = useState<UserRole>("executive");
-  
+
+  // Enable global keyboard shortcuts
+  useGlobalShortcuts();
+
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
