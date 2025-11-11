@@ -8,9 +8,11 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { SearchBar } from "@/components/search-bar";
+import { EnhancedSearchBar } from "@/components/enhanced-search-bar";
 import { QuickActions } from "@/components/quick-actions";
 import { RoleSwitcher, type UserRole } from "@/components/role-switcher";
+import { NotificationPanel } from "@/components/notification-panel";
+import { WelcomeSplash } from "@/components/welcome-splash";
 import { Bell, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -96,6 +98,8 @@ function NavigationBreadcrumb() {
 
 export default function App() {
   const [userRole, setUserRole] = useState<UserRole>("executive");
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
   // Enable global keyboard shortcuts
   useGlobalShortcuts();
@@ -104,6 +108,10 @@ export default function App() {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
   };
+
+  if (showSplash) {
+    return <WelcomeSplash onComplete={() => setShowSplash(false)} />;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -121,33 +129,40 @@ export default function App() {
                     <SidebarTrigger data-testid="button-sidebar-toggle" />
                     <NavigationBreadcrumb />
                     <div className="hidden md:block flex-1 max-w-md">
-                      <SearchBar />
+                      <EnhancedSearchBar />
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <RoleSwitcher currentRole={userRole} onRoleChange={setUserRole} />
                     <QuickActions />
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="relative" 
-                      data-testid="button-notifications"
-                      aria-label="Notifications"
-                    >
-                      <Bell className="h-5 w-5" />
-                      <Badge 
-                        variant="destructive" 
-                        className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-                        aria-label="3 unread notifications"
+                    <div className="relative">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="relative"
+                        onClick={() => setShowNotifications(!showNotifications)}
+                        data-testid="button-notifications"
+                        aria-label="Notifications"
                       >
-                        3
-                      </Badge>
-                    </Button>
+                        <Bell className="h-5 w-5" />
+                        <Badge
+                          variant="destructive"
+                          className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                          aria-label="3 unread notifications"
+                        >
+                          3
+                        </Badge>
+                      </Button>
+                      <NotificationPanel
+                        isOpen={showNotifications}
+                        onClose={() => setShowNotifications(false)}
+                      />
+                    </div>
                     <ThemeToggle />
                   </div>
                 </header>
                 <div className="md:hidden px-6 py-3 border-b">
-                  <SearchBar />
+                  <EnhancedSearchBar />
                 </div>
                 <main className="flex-1 overflow-auto p-6" role="main" aria-label="Main content">
                   <Router />
