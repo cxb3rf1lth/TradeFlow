@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./memory-storage";
+import { storage } from "./db-storage";
 import { 
   insertEmailLogSchema, 
   insertEmailTemplateSchema, 
@@ -194,61 +194,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
-    }
-  });
-
-  // CRM Routes
-  app.get("/api/contacts", async (req, res) => {
-    try {
-      const contacts = await storage.getContacts();
-      res.json(contacts);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  app.post("/api/contacts", async (req, res) => {
-    try {
-      const contact = await storage.createContact(req.body);
-      res.json(contact);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message });
-    }
-  });
-
-  app.get("/api/companies", async (req, res) => {
-    try {
-      const companies = await storage.getCompanies();
-      res.json(companies);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  app.post("/api/companies", async (req, res) => {
-    try {
-      const company = await storage.createCompany(req.body);
-      res.json(company);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message });
-    }
-  });
-
-  app.get("/api/deals", async (req, res) => {
-    try {
-      const deals = await storage.getDeals();
-      res.json(deals);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  app.post("/api/deals", async (req, res) => {
-    try {
-      const deal = await storage.createDeal(req.body);
-      res.json(deal);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message });
     }
   });
 
