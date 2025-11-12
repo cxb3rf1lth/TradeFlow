@@ -36,7 +36,6 @@ import {
   AlignRight,
   AlignJustify,
   Highlighter,
-  Palette,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
