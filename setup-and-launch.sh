@@ -1,151 +1,273 @@
 #!/bin/bash
 
-# TradeFlow - Automatic Setup and Launch Script
-# This script clones the repository, installs dependencies, and launches the application
+# TradeFlow v2.0 - Complete Setup and Launch Script
+# This script will set up and launch your TradeFlow application with full security
 
 set -e  # Exit on error
 
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "   TradeFlow v2.0 - Secure Enterprise Edition Setup"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
 # Colors for output
 GREEN='\033[0;32m'
-BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Function to print colored messages
-print_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+# Function to print success message
+success() {
+    echo -e "${GREEN}✓${NC} $1"
 }
 
-print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+# Function to print warning message
+warning() {
+    echo -e "${YELLOW}⚠${NC} $1"
 }
 
-print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+# Function to print error message
+error() {
+    echo -e "${RED}✗${NC} $1"
 }
 
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+# Function to print info message
+info() {
+    echo -e "${BLUE}ℹ${NC} $1"
 }
 
-# Check if required commands are available
-check_dependencies() {
-    print_info "Checking required dependencies..."
-    
-    if ! command -v git &> /dev/null; then
-        print_error "git is not installed. Please install git first."
-        exit 1
-    fi
-    
-    if ! command -v node &> /dev/null; then
-        print_error "Node.js is not installed. Please install Node.js (v18 or higher) first."
-        exit 1
-    fi
-    
-    if ! command -v npm &> /dev/null; then
-        print_error "npm is not installed. Please install npm first."
-        exit 1
-    fi
-    
-    NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
-    if [ "$NODE_VERSION" -lt 18 ]; then
-        print_warning "Node.js version is $NODE_VERSION. Version 18 or higher is recommended."
-    fi
-    
-    print_success "All required dependencies are installed!"
+# Function to print section header
+section() {
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "  $1"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 }
 
-# Clone the repository
-clone_repo() {
-    print_info "Cloning TradeFlow repository..."
-    
-    REPO_URL="https://github.com/cxb3rf1lth/TradeFlow.git"
-    TARGET_DIR="TradeFlow"
-    BRANCH="copilot/perform-code-review-and-fix"
-    
-    # Remove existing directory if it exists
-    if [ -d "$TARGET_DIR" ]; then
-        print_warning "Directory $TARGET_DIR already exists. Removing it..."
-        rm -rf "$TARGET_DIR"
-    fi
-    
-    # Clone the repository
-    git clone "$REPO_URL" "$TARGET_DIR"
-    
-    # Change to the repository directory
-    cd "$TARGET_DIR"
-    
-    # Checkout the specific branch
-    print_info "Checking out branch: $BRANCH"
-    git checkout "$BRANCH"
-    
-    print_success "Repository cloned successfully!"
-}
+# Check if Node.js is installed
+section "1. Checking Prerequisites"
+if ! command -v node &> /dev/null; then
+    error "Node.js is not installed. Please install Node.js 18+ first."
+    exit 1
+fi
+NODE_VERSION=$(node -v)
+success "Node.js $NODE_VERSION detected"
+
+if ! command -v npm &> /dev/null; then
+    error "npm is not installed. Please install npm first."
+    exit 1
+fi
+NPM_VERSION=$(npm -v)
+success "npm $NPM_VERSION detected"
 
 # Install dependencies
-install_dependencies() {
-    print_info "Installing npm dependencies (this may take a few minutes)..."
-    
-    npm install --silent
-    
-    print_success "Dependencies installed successfully!"
-}
+section "2. Installing Dependencies"
+info "This may take a few minutes..."
+npm install
+success "All dependencies installed successfully"
 
-# Create .env file if it doesn't exist
-create_env_file() {
-    if [ ! -f ".env" ]; then
-        print_info "Creating .env file with default configuration..."
-        
-        cat > .env << 'EOF'
-# Database - optional (uses in-memory storage if not set)
-DATABASE_URL=
-
-# Optional services
-RESEND_API_KEY=
-ANTHROPIC_API_KEY=
-
-# Port
-PORT=5000
-EOF
-        
-        print_success ".env file created!"
+# Generate JWT secret
+section "3. Setting Up Environment Variables"
+if [ -f .env ]; then
+    warning ".env file already exists"
+    read -p "Do you want to regenerate it? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        success "Using existing .env file"
     else
-        print_info ".env file already exists, skipping creation."
+        rm .env
     fi
-}
+fi
 
-# Launch the application
-launch_app() {
-    print_info "Launching TradeFlow application..."
-    print_info "The app will be available at: http://localhost:5000"
-    print_info ""
-    print_info "Press Ctrl+C to stop the server"
-    print_info ""
-    
-    # Start the development server
-    npm run dev
-}
+if [ ! -f .env ]; then
+    info "Generating secure JWT secret..."
+    JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
 
-# Main execution
-main() {
-    echo ""
-    echo "======================================"
-    echo "  TradeFlow - Setup & Launch Script  "
-    echo "======================================"
-    echo ""
-    
-    check_dependencies
-    clone_repo
-    install_dependencies
-    create_env_file
-    
-    echo ""
-    print_success "Setup completed successfully!"
-    echo ""
-    
-    launch_app
-}
+    cat > .env << EOF
+# TradeFlow v2.0 Environment Variables
+# Generated on $(date)
 
-# Run the main function
-main
+# 🔒 CRITICAL - Security (REQUIRED)
+JWT_SECRET=$JWT_SECRET
+NODE_ENV=production
+PORT=5000
+
+# Optional - Features
+# RESEND_API_KEY=re_your_api_key_here
+# DATABASE_URL=postgresql://user:pass@host:5432/db
+# ALLOWED_ORIGINS=https://yourdomain.com
+EOF
+
+    success ".env file created with secure JWT_SECRET"
+    info "JWT Secret: $JWT_SECRET"
+else
+    # Check if JWT_SECRET exists in .env
+    if ! grep -q "JWT_SECRET=" .env; then
+        warning "JWT_SECRET not found in .env, adding it..."
+        JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+        echo "JWT_SECRET=$JWT_SECRET" >> .env
+        success "JWT_SECRET added to .env"
+    else
+        success "JWT_SECRET found in .env"
+    fi
+fi
+
+# Build the application
+section "4. Building Application"
+info "Building production bundle..."
+npm run build
+success "Application built successfully"
+
+# Ask about database setup
+section "5. Database Setup (Optional)"
+if grep -q "^DATABASE_URL=.\+" .env 2>/dev/null; then
+    warning "PostgreSQL database URL detected"
+    read -p "Do you want to push database schema? (y/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        npm run db:push
+        success "Database schema pushed"
+    fi
+else
+    success "Using in-memory storage (data will not persist between restarts)"
+fi
+
+# Start the server in background
+section "6. Starting Server"
+info "Starting TradeFlow server on port 5000..."
+PORT=5000 npm start > /tmp/tradeflow.log 2>&1 &
+SERVER_PID=$!
+echo $SERVER_PID > /tmp/tradeflow.pid
+
+# Wait for server to start
+info "Waiting for server to initialize..."
+sleep 5
+
+# Check if server is running
+if ps -p $SERVER_PID > /dev/null 2>&1; then
+    success "Server started successfully (PID: $SERVER_PID)"
+else
+    error "Server failed to start. Check /tmp/tradeflow.log for details"
+    cat /tmp/tradeflow.log
+    exit 1
+fi
+
+# Create admin user
+section "7. Creating Admin User"
+warning "You need to create an admin user to access the application"
+echo ""
+
+# Default values
+DEFAULT_USERNAME="admin"
+DEFAULT_PASSWORD="Admin@2024!"
+
+read -p "Enter admin username (default: admin): " ADMIN_USERNAME
+ADMIN_USERNAME=${ADMIN_USERNAME:-$DEFAULT_USERNAME}
+
+read -s -p "Enter admin password (min 8 chars): " ADMIN_PASSWORD
+echo ""
+if [ -z "$ADMIN_PASSWORD" ]; then
+    ADMIN_PASSWORD=$DEFAULT_PASSWORD
+    warning "Using default password: $DEFAULT_PASSWORD"
+fi
+
+read -p "Enter admin name (optional): " ADMIN_NAME
+
+# Create the admin user
+echo ""
+info "Creating admin user..."
+
+# Build JSON payload
+if [ -z "$ADMIN_NAME" ]; then
+    JSON_PAYLOAD=$(cat <<EOF
+{
+  "username": "$ADMIN_USERNAME",
+  "password": "$ADMIN_PASSWORD",
+  "role": "admin"
+}
+EOF
+)
+else
+    JSON_PAYLOAD=$(cat <<EOF
+{
+  "username": "$ADMIN_USERNAME",
+  "password": "$ADMIN_PASSWORD",
+  "name": "$ADMIN_NAME",
+  "role": "admin"
+}
+EOF
+)
+fi
+
+# Register admin user
+REGISTER_RESPONSE=$(curl -s -X POST http://localhost:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d "$JSON_PAYLOAD")
+
+if echo "$REGISTER_RESPONSE" | grep -q "token"; then
+    success "Admin user created successfully!"
+
+    # Extract and display token
+    TOKEN=$(echo $REGISTER_RESPONSE | grep -o '"token":"[^"]*' | cut -d'"' -f4)
+    echo ""
+    echo "Your JWT Token (save this):"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "$TOKEN"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+else
+    warning "Admin user may already exist or registration failed"
+    echo "Response: $REGISTER_RESPONSE"
+fi
+
+# Final information
+section "8. Setup Complete! 🎉"
+echo ""
+success "TradeFlow is now running!"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  Access Information"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "  🌐 Application URL:     http://localhost:5000"
+echo "  👤 Admin Username:      $ADMIN_USERNAME"
+echo "  🔐 Admin Password:      [hidden]"
+echo "  🔑 JWT Token:           [saved above]"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  Useful Commands"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "  View logs:              tail -f /tmp/tradeflow.log"
+echo "  Stop server:            kill \$(cat /tmp/tradeflow.pid)"
+echo "  Restart:                npm start"
+echo "  Check status:           ps -p \$(cat /tmp/tradeflow.pid)"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  API Test Examples"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "# Login:"
+echo "curl -X POST http://localhost:5000/api/auth/login \\"
+echo "  -H 'Content-Type: application/json' \\"
+echo "  -d '{\"username\":\"$ADMIN_USERNAME\",\"password\":\"YOUR_PASSWORD\"}'"
+echo ""
+echo "# Get contacts (use your token):"
+echo "curl -H 'Authorization: Bearer YOUR_TOKEN' \\"
+echo "  http://localhost:5000/api/contacts"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  Documentation"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "  📖 README.md                 - Quick start & API docs"
+echo "  📋 IMPLEMENTATION_SUMMARY.md - Security implementation"
+echo "  🔍 CODE_REVIEW.md            - Code review report"
+echo "  ✅ TESTING.md                - Testing checklist"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+success "Open your browser and navigate to http://localhost:5000"
+echo ""
+warning "Server is running in the background. Use 'kill \$(cat /tmp/tradeflow.pid)' to stop it."
+echo ""
