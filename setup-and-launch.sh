@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # TradeFlow - Automatic Setup and Launch Script
-# This script clones the repository, installs dependencies, and launches the application
+# This script sets up and launches the TradeFlow application
 
 set -e  # Exit on error
 
@@ -33,11 +33,6 @@ print_error() {
 check_dependencies() {
     print_info "Checking required dependencies..."
     
-    if ! command -v git &> /dev/null; then
-        print_error "git is not installed. Please install git first."
-        exit 1
-    fi
-    
     if ! command -v node &> /dev/null; then
         print_error "Node.js is not installed. Please install Node.js (v18 or higher) first."
         exit 1
@@ -56,48 +51,30 @@ check_dependencies() {
     print_success "All required dependencies are installed!"
 }
 
-# Clone the repository
-clone_repo() {
-    print_info "Cloning TradeFlow repository..."
-    
-    REPO_URL="https://github.com/cxb3rf1lth/TradeFlow.git"
-    TARGET_DIR="TradeFlow"
-    BRANCH="copilot/perform-code-review-and-fix"
-    
-    # Remove existing directory if it exists
-    if [ -d "$TARGET_DIR" ]; then
-        print_warning "Directory $TARGET_DIR already exists. Removing it..."
-        rm -rf "$TARGET_DIR"
-    fi
-    
-    # Clone the repository
-    git clone "$REPO_URL" "$TARGET_DIR"
-    
-    # Change to the repository directory
-    cd "$TARGET_DIR"
-    
-    # Checkout the specific branch
-    print_info "Checking out branch: $BRANCH"
-    git checkout "$BRANCH"
-    
-    print_success "Repository cloned successfully!"
-}
-
-# Install dependencies
+# Install dependencies if needed
 install_dependencies() {
-    print_info "Installing npm dependencies (this may take a few minutes)..."
-    
-    npm install --silent
-    
-    print_success "Dependencies installed successfully!"
+    if [ ! -d "node_modules" ]; then
+        print_info "Installing npm dependencies (this may take a few minutes)..."
+        npm install --silent
+        print_success "Dependencies installed successfully!"
+    else
+        print_info "Dependencies already installed. Checking for updates..."
+        npm install --silent
+        print_success "Dependencies up to date!"
+    fi
 }
 
 # Create .env file if it doesn't exist
 create_env_file() {
     if [ ! -f ".env" ]; then
-        print_info "Creating .env file with default configuration..."
+        print_info "Creating .env file from template..."
         
-        cat > .env << 'EOF'
+        if [ -f ".env.example" ]; then
+            cp .env.example .env
+            print_success ".env file created from .env.example!"
+            print_warning "Please edit .env file to configure your database and API keys if needed."
+        else
+            cat > .env << 'EOF'
 # Database - optional (uses in-memory storage if not set)
 DATABASE_URL=
 
@@ -108,10 +85,10 @@ ANTHROPIC_API_KEY=
 # Port
 PORT=5000
 EOF
-        
-        print_success ".env file created!"
+            print_success ".env file created with defaults!"
+        fi
     else
-        print_info ".env file already exists, skipping creation."
+        print_info ".env file already exists."
     fi
 }
 
@@ -130,13 +107,12 @@ launch_app() {
 # Main execution
 main() {
     echo ""
-    echo "======================================"
-    echo "  TradeFlow - Setup & Launch Script  "
-    echo "======================================"
+    echo "=========================================="
+    echo "    TradeFlow - Setup & Launch Script    "
+    echo "=========================================="
     echo ""
     
     check_dependencies
-    clone_repo
     install_dependencies
     create_env_file
     

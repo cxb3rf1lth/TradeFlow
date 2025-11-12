@@ -13,7 +13,23 @@ A comprehensive team management platform for executives, featuring email managem
 
 ## Quick Start
 
-### Web Application
+### Single Command Launch (Recommended)
+
+The easiest way to set up and launch TradeFlow:
+
+```bash
+./setup-and-launch.sh
+```
+
+This script will:
+- Check system prerequisites
+- Install dependencies automatically
+- Create .env configuration file
+- Launch the application on http://localhost:5000
+
+### Manual Setup
+
+If you prefer manual setup:
 
 ```bash
 # Install dependencies
@@ -21,10 +37,7 @@ npm install
 
 # Set up environment variables
 cp .env.example .env
-# Edit .env with your configuration
-
-# Push database schema
-npm run db:push
+# Edit .env with your configuration (optional - works with defaults)
 
 # Development
 npm run dev
