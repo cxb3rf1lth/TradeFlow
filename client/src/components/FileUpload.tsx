@@ -1,4 +1,4 @@
-import { useState, useRef, DragEvent } from "react";
+import { useState, useRef, DragEvent, useEffect } from "react";
 import { Upload, X, File, FileText, Image, Video, Music, Archive, CheckCircle2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -20,6 +20,29 @@ interface UploadFile {
   error?: string;
 }
 
+/**
+ * FileUpload Component
+ *
+ * A drag-and-drop file upload component with validation, progress tracking,
+ * and multi-file support.
+ *
+ * Features:
+ * - Drag-and-drop interface
+ * - File type validation
+ * - File size validation
+ * - Upload progress tracking
+ * - Multi-file upload support
+ * - Error handling with user feedback
+ * - Memory-safe (cleans up intervals on unmount)
+ *
+ * @param {FileUploadProps} props - Component properties
+ * @param {Function} props.onUpload - Async function to handle file upload
+ * @param {string} props.accept - Accepted file types (e.g., "image/*,.pdf")
+ * @param {number} props.maxSize - Maximum file size in MB (default: 50)
+ * @param {boolean} props.multiple - Allow multiple file uploads (default: true)
+ * @param {string} props.className - Additional CSS classes
+ * @returns {JSX.Element} The file upload component
+ */
 export default function FileUpload({
   onUpload,
   accept,
@@ -30,6 +53,15 @@ export default function FileUpload({
   const [isDragging, setIsDragging] = useState(false);
   const [uploadFiles, setUploadFiles] = useState<UploadFile[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const activeIntervalsRef = useRef<Set<NodeJS.Timeout>>(new Set());
+
+  // Cleanup intervals on unmount
+  useEffect(() => {
+    return () => {
+      activeIntervalsRef.current.forEach((interval) => clearInterval(interval));
+      activeIntervalsRef.current.clear();
+    };
+  }, []);
 
   const getFileIcon = (fileName: string) => {
     const ext = fileName.split(".").pop()?.toLowerCase();
@@ -129,10 +161,15 @@ export default function FileUpload({
           );
         }, 200);
 
+        // Track interval for cleanup
+        activeIntervalsRef.current.add(progressInterval);
+
         // Perform the actual upload
         await onUpload(validFiles);
 
+        // Clear and remove interval
         clearInterval(progressInterval);
+        activeIntervalsRef.current.delete(progressInterval);
 
         // Mark as success
         setUploadFiles((prev) =>
@@ -234,6 +271,7 @@ export default function FileUpload({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             variant="outline"
+            aria-label="Browse files to upload"
           >
             Browse Files
           </Button>
@@ -245,6 +283,7 @@ export default function FileUpload({
             multiple={multiple}
             onChange={handleFileInputChange}
             className="hidden"
+            aria-label="File upload input"
           />
 
           <div className="mt-4 text-xs text-gray-500">

@@ -17,6 +17,25 @@ interface DataExportProps {
   columns?: string[];
 }
 
+/**
+ * DataExport Component
+ *
+ * A multi-format data export component supporting CSV, JSON, and Excel exports.
+ *
+ * Features:
+ * - Export to CSV with proper escaping
+ * - Export to JSON with column filtering
+ * - Export to Excel (HTML table format)
+ * - HTML escaping for XSS prevention
+ * - Memory-safe (revokes object URLs)
+ * - User feedback via toasts
+ *
+ * @param {DataExportProps} props - Component properties
+ * @param {any[]} props.data - Array of data objects to export
+ * @param {string} props.filename - Base filename for exports (default: "export")
+ * @param {string[]} props.columns - Optional array of column names to include
+ * @returns {JSX.Element} The export dropdown button component
+ */
 export default function DataExport({
   data,
   filename = "export",
@@ -82,6 +101,9 @@ export default function DataExport({
       link.click();
       document.body.removeChild(link);
 
+      // Clean up the object URL to prevent memory leaks
+      URL.revokeObjectURL(url);
+
       toast({
         title: "Export successful",
         description: `${data.length} records exported to CSV`,
@@ -137,6 +159,9 @@ export default function DataExport({
       link.click();
       document.body.removeChild(link);
 
+      // Clean up the object URL to prevent memory leaks
+      URL.revokeObjectURL(url);
+
       toast({
         title: "Export successful",
         description: `${data.length} records exported to JSON`,
@@ -150,6 +175,16 @@ export default function DataExport({
     } finally {
       setIsExporting(false);
     }
+  };
+
+  const escapeHtml = (str: string): string => {
+    const value = String(str);
+    return value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   };
 
   const exportToExcel = () => {
@@ -171,7 +206,7 @@ export default function DataExport({
       // Create HTML table
       let html = '<table><thead><tr>';
       headers.forEach((header) => {
-        html += `<th>${header}</th>`;
+        html += `<th>${escapeHtml(header)}</th>`;
       });
       html += '</tr></thead><tbody>';
 
@@ -179,7 +214,7 @@ export default function DataExport({
         html += '<tr>';
         headers.forEach((header) => {
           const value = row[header] ?? "";
-          html += `<td>${value}</td>`;
+          html += `<td>${escapeHtml(value)}</td>`;
         });
         html += '</tr>';
       });
@@ -199,6 +234,9 @@ export default function DataExport({
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
+      // Clean up the object URL to prevent memory leaks
+      URL.revokeObjectURL(url);
 
       toast({
         title: "Export successful",

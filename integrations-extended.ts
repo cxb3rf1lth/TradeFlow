@@ -164,7 +164,11 @@ export class GoogleWorkspaceConnector {
         body,
       ].join("\n");
 
-      const encodedEmail = Buffer.from(email).toString("base64").replace(/\+/g, "-").replace(/\//g, "_");
+      // Use browser-compatible base64 encoding instead of Buffer
+      const encodedEmail = btoa(unescape(encodeURIComponent(email)))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "");
 
       const response = await this.client.post(
         "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
@@ -360,7 +364,8 @@ export class ZendeskConnector {
       throw new Error("Zendesk subdomain, email, and API token are required");
     }
 
-    const auth = Buffer.from(`${config.email}/token:${config.apiToken}`).toString("base64");
+    // Use browser-compatible base64 encoding instead of Buffer
+    const auth = btoa(`${config.email}/token:${config.apiToken}`);
 
     this.client = axios.create({
       baseURL: `https://${config.subdomain}.zendesk.com/api/v2`,

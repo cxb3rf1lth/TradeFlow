@@ -5,29 +5,46 @@ import { Search, X, Users, Building2, TrendingUp, Trello, FileText, Calendar } f
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import type { SearchResult, Contact, Company, Deal, Board, Activity } from "@/types";
 
-interface SearchResult {
-  id: string;
-  type: "contact" | "company" | "deal" | "board" | "card" | "activity";
-  title: string;
-  subtitle?: string;
-  description?: string;
-  url: string;
-}
-
+/**
+ * GlobalSearch Component
+ *
+ * A keyboard-shortcut powered global search component that searches across all entities
+ * in the application (contacts, companies, deals, boards, and activities).
+ *
+ * Features:
+ * - Keyboard shortcut: Cmd+K (Mac) or Ctrl+K (Windows/Linux)
+ * - Debounced search (300ms)
+ * - Click-outside-to-close
+ * - ESC key to close
+ * - Accessible with ARIA labels
+ *
+ * @returns {JSX.Element} The global search modal component
+ */
 export default function GlobalSearch() {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [, setLocation] = useLocation();
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   // Fetch all data for searching
-  const { data: contacts } = useQuery({ queryKey: ["/api/crm/contacts"] });
-  const { data: companies } = useQuery({ queryKey: ["/api/crm/companies"] });
-  const { data: deals } = useQuery({ queryKey: ["/api/crm/deals"] });
-  const { data: boards } = useQuery({ queryKey: ["/api/projects/boards"] });
-  const { data: activities } = useQuery({ queryKey: ["/api/activities"] });
+  const { data: contacts } = useQuery<Contact[]>({ queryKey: ["/api/crm/contacts"] });
+  const { data: companies } = useQuery<Company[]>({ queryKey: ["/api/crm/companies"] });
+  const { data: deals } = useQuery<Deal[]>({ queryKey: ["/api/crm/deals"] });
+  const { data: boards } = useQuery<Board[]>({ queryKey: ["/api/projects/boards"] });
+  const { data: activities } = useQuery<Activity[]>({ queryKey: ["/api/activities"] });
 
   // Keyboard shortcut to open search (Cmd+K or Ctrl+K)
   useEffect(() => {
@@ -62,14 +79,14 @@ export default function GlobalSearch() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
-  // Perform search across all entities
+  // Perform search across all entities (using debounced query)
   const searchResults: SearchResult[] = [];
 
-  if (searchQuery.length >= 2) {
-    const query = searchQuery.toLowerCase();
+  if (debouncedQuery.length >= 2) {
+    const query = debouncedQuery.toLowerCase();
 
     // Search contacts
-    contacts?.forEach((contact: any) => {
+    contacts?.forEach((contact) => {
       const fullName = `${contact.firstName} ${contact.lastName}`.toLowerCase();
       if (
         fullName.includes(query) ||
@@ -88,7 +105,7 @@ export default function GlobalSearch() {
     });
 
     // Search companies
-    companies?.forEach((company: any) => {
+    companies?.forEach((company) => {
       if (
         company.name?.toLowerCase().includes(query) ||
         company.domain?.toLowerCase().includes(query) ||
@@ -106,7 +123,7 @@ export default function GlobalSearch() {
     });
 
     // Search deals
-    deals?.forEach((deal: any) => {
+    deals?.forEach((deal) => {
       if (
         deal.name?.toLowerCase().includes(query) ||
         deal.description?.toLowerCase().includes(query)
@@ -123,7 +140,7 @@ export default function GlobalSearch() {
     });
 
     // Search boards
-    boards?.forEach((board: any) => {
+    boards?.forEach((board) => {
       if (
         board.name?.toLowerCase().includes(query) ||
         board.description?.toLowerCase().includes(query)
@@ -140,9 +157,16 @@ export default function GlobalSearch() {
     });
 
     // Search activities
-    activities?.forEach((activity: any) => {
+    activities?.forEach((activity) => {
       const metadata = typeof activity.metadata === "string"
-        ? JSON.parse(activity.metadata)
+        ? (() => {
+            try {
+              return JSON.parse(activity.metadata);
+            } catch (error) {
+              console.error("Failed to parse activity metadata:", error);
+              return {};
+            }
+          })()
         : activity.metadata;
 
       if (
@@ -197,22 +221,29 @@ export default function GlobalSearch() {
           setTimeout(() => inputRef.current?.focus(), 100);
         }}
         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+        aria-label="Open global search"
+        aria-keyshortcuts="Control+K Meta+K"
       >
-        <Search className="w-4 h-4" />
+        <Search className="w-4 h-4" aria-hidden="true" />
         <span>Search...</span>
-        <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-gray-500 bg-gray-100 border border-gray-200 rounded">
+        <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-gray-500 bg-gray-100 border border-gray-200 rounded" aria-hidden="true">
           <span className="text-xs">⌘</span>K
         </kbd>
       </button>
 
       {/* Search modal */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black bg-opacity-50">
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black bg-opacity-50"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Global search dialog"
+        >
           <div ref={searchRef} className="w-full max-w-2xl mx-4">
             <Card className="overflow-hidden shadow-2xl">
               {/* Search input */}
               <div className="flex items-center gap-3 p-4 border-b border-gray-200">
-                <Search className="w-5 h-5 text-gray-400" />
+                <Search className="w-5 h-5 text-gray-400" aria-hidden="true" />
                 <Input
                   ref={inputRef}
                   type="text"
@@ -221,6 +252,9 @@ export default function GlobalSearch() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="flex-1 border-0 focus:ring-0 focus:outline-none"
                   autoFocus
+                  aria-label="Search across all entities"
+                  role="searchbox"
+                  aria-autocomplete="list"
                 />
                 <button
                   onClick={() => {
@@ -228,8 +262,9 @@ export default function GlobalSearch() {
                     setSearchQuery("");
                   }}
                   className="p-1 hover:bg-gray-100 rounded"
+                  aria-label="Close search dialog"
                 >
-                  <X className="w-4 h-4 text-gray-400" />
+                  <X className="w-4 h-4 text-gray-400" aria-hidden="true" />
                 </button>
               </div>
 
@@ -256,12 +291,14 @@ export default function GlobalSearch() {
                 )}
 
                 {limitedResults.length > 0 && (
-                  <div className="divide-y divide-gray-100">
+                  <div className="divide-y divide-gray-100" role="listbox" aria-label="Search results">
                     {limitedResults.map((result) => (
                       <button
                         key={`${result.type}-${result.id}`}
                         onClick={() => handleResultClick(result)}
                         className="w-full flex items-start gap-3 p-4 hover:bg-gray-50 transition-colors text-left"
+                        role="option"
+                        aria-label={`${result.type}: ${result.title}`}
                       >
                         <div
                           className={cn(

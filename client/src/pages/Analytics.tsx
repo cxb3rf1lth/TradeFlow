@@ -27,35 +27,53 @@ import {
   Activity,
   Calendar,
 } from "lucide-react";
+import type { Contact, Company, Deal, Activity as ActivityType, KPIMetric, ChartDataPoint, DealStageData } from "@/types";
 
 export default function Analytics() {
-  const { data: contacts } = useQuery({ queryKey: ["/api/crm/contacts"] });
-  const { data: companies } = useQuery({ queryKey: ["/api/crm/companies"] });
-  const { data: deals } = useQuery({ queryKey: ["/api/crm/deals"] });
-  const { data: activities } = useQuery({ queryKey: ["/api/activities"] });
+  const { data: contacts, isLoading: isLoadingContacts } = useQuery<Contact[]>({ queryKey: ["/api/crm/contacts"] });
+  const { data: companies, isLoading: isLoadingCompanies } = useQuery<Company[]>({ queryKey: ["/api/crm/companies"] });
+  const { data: deals, isLoading: isLoadingDeals } = useQuery<Deal[]>({ queryKey: ["/api/crm/deals"] });
+  const { data: activities, isLoading: isLoadingActivities } = useQuery<ActivityType[]>({ queryKey: ["/api/activities"] });
+
+  const isLoading = isLoadingContacts || isLoadingCompanies || isLoadingDeals || isLoadingActivities;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading analytics...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Calculate metrics
   const totalContacts = contacts?.length || 0;
   const totalCompanies = companies?.length || 0;
   const totalDeals = deals?.length || 0;
-  const openDeals = deals?.filter((d: any) => d.status === "open").length || 0;
-  const wonDeals = deals?.filter((d: any) => d.status === "won").length || 0;
+  const openDeals = deals?.filter((d) => d.status === "open").length || 0;
+  const wonDeals = deals?.filter((d) => d.status === "won").length || 0;
   const totalRevenue = deals
-    ?.filter((d: any) => d.status === "won")
-    .reduce((sum: number, d: any) => sum + parseFloat(d.value || 0), 0) || 0;
+    ?.filter((d) => d.status === "won")
+    .reduce((sum, d) => {
+      const value = d.value ? parseFloat(String(d.value)) : 0;
+      return sum + (isNaN(value) ? 0 : value);
+    }, 0) || 0;
 
   // Deal pipeline data
-  const pipelineData = deals
+  const pipelineData: ChartDataPoint[] = deals
     ? Object.entries(
-        deals.reduce((acc: any, deal: any) => {
-          acc[deal.status] = (acc[deal.status] || 0) + 1;
+        deals.reduce((acc: Record<string, number>, deal) => {
+          const status = deal.status || "unknown";
+          acc[status] = (acc[status] || 0) + 1;
           return acc;
         }, {})
-      ).map(([name, value]) => ({ name, value }))
+      ).map(([name, value]) => ({ name, value: value as number }))
     : [];
 
   // Revenue by month (mock data - in production, calculate from actual data)
-  const revenueData = [
+  const revenueData: ChartDataPoint[] = [
     { month: "Jan", revenue: 45000, deals: 12 },
     { month: "Feb", revenue: 52000, deals: 15 },
     { month: "Mar", revenue: 61000, deals: 18 },
@@ -65,7 +83,7 @@ export default function Analytics() {
   ];
 
   // Activity timeline
-  const activityData = [
+  const activityData: ChartDataPoint[] = [
     { day: "Mon", contacts: 24, deals: 8, tasks: 15 },
     { day: "Tue", contacts: 18, deals: 12, tasks: 22 },
     { day: "Wed", contacts: 32, deals: 6, tasks: 18 },
@@ -74,7 +92,7 @@ export default function Analytics() {
   ];
 
   // Deal stage distribution
-  const dealStages = [
+  const dealStages: DealStageData[] = [
     { name: "Prospecting", value: 30, color: "#3b82f6" },
     { name: "Qualification", value: 25, color: "#8b5cf6" },
     { name: "Proposal", value: 20, color: "#ec4899" },
@@ -85,7 +103,7 @@ export default function Analytics() {
   const COLORS = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"];
 
   // KPI Cards
-  const kpis = [
+  const kpis: KPIMetric[] = [
     {
       title: "Total Revenue",
       value: `$${(totalRevenue / 1000).toFixed(1)}K`,
