@@ -252,6 +252,202 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // CRM UPDATE/DELETE routes
+  app.patch("/api/contacts/:id", async (req, res) => {
+    try {
+      const contact = await storage.updateContact(req.params.id, req.body);
+      if (!contact) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+      res.json(contact);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/contacts/:id", async (req, res) => {
+    try {
+      await storage.deleteContact(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/companies/:id", async (req, res) => {
+    try {
+      const company = await storage.updateCompany(req.params.id, req.body);
+      if (!company) {
+        return res.status(404).json({ error: "Company not found" });
+      }
+      res.json(company);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/companies/:id", async (req, res) => {
+    try {
+      await storage.deleteCompany(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/deals/:id", async (req, res) => {
+    try {
+      const deal = await storage.updateDeal(req.params.id, req.body);
+      if (!deal) {
+        return res.status(404).json({ error: "Deal not found" });
+      }
+      res.json(deal);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/deals/:id", async (req, res) => {
+    try {
+      await storage.deleteDeal(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Board management routes
+  app.get("/api/boards", async (req, res) => {
+    try {
+      const boards = await storage.getBoards();
+      res.json(boards);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/boards", async (req, res) => {
+    try {
+      const board = await storage.createBoard(req.body);
+      res.json(board);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/boards/:id", async (req, res) => {
+    try {
+      const board = await storage.getBoard(req.params.id);
+      if (!board) {
+        return res.status(404).json({ error: "Board not found" });
+      }
+      res.json(board);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/boards/:id", async (req, res) => {
+    try {
+      const board = await storage.updateBoard(req.params.id, req.body);
+      if (!board) {
+        return res.status(404).json({ error: "Board not found" });
+      }
+      res.json(board);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/boards/:id", async (req, res) => {
+    try {
+      await storage.deleteBoard(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Board lists
+  app.get("/api/boards/:boardId/lists", async (req, res) => {
+    try {
+      const lists = await storage.getBoardLists(req.params.boardId);
+      res.json(lists);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/boards/:boardId/lists", async (req, res) => {
+    try {
+      const list = await storage.createBoardList({ ...req.body, boardId: req.params.boardId });
+      res.json(list);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/lists/:id", async (req, res) => {
+    try {
+      const list = await storage.updateBoardList(req.params.id, req.body);
+      if (!list) {
+        return res.status(404).json({ error: "List not found" });
+      }
+      res.json(list);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/lists/:id", async (req, res) => {
+    try {
+      await storage.deleteBoardList(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Cards
+  app.get("/api/lists/:listId/cards", async (req, res) => {
+    try {
+      const cards = await storage.getCards(req.params.listId);
+      res.json(cards);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/lists/:listId/cards", async (req, res) => {
+    try {
+      const card = await storage.createCard({ ...req.body, listId: req.params.listId });
+      res.json(card);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/cards/:id", async (req, res) => {
+    try {
+      const card = await storage.updateCard(req.params.id, req.body);
+      if (!card) {
+        return res.status(404).json({ error: "Card not found" });
+      }
+      res.json(card);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/cards/:id", async (req, res) => {
+    try {
+      await storage.deleteCard(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
