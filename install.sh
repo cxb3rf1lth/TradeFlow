@@ -33,7 +33,8 @@ echo -e "${G}✓${NC} Repository ready\n"
 # Install dependencies
 echo -e "${Y}[3/6]${NC} Installing dependencies (this takes 2-3 minutes)..."
 npm install --silent --no-progress > /dev/null 2>&1
-echo -e "${G}✓${NC} 595 packages installed\n"
+PKG_COUNT=$(npm list --all --parseable 2>/dev/null | wc -l)
+echo -e "${G}✓${NC} $PKG_COUNT packages installed\n"
 
 # Setup environment
 echo -e "${Y}[4/6]${NC} Configuring environment..."

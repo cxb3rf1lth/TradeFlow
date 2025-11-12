@@ -55,6 +55,9 @@ export default function FileUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activeIntervalsRef = useRef<Set<NodeJS.Timeout>>(new Set());
 
+  // Progress update interval in milliseconds
+  const PROGRESS_UPDATE_INTERVAL_MS = 200;
+
   // Cleanup intervals on unmount
   useEffect(() => {
     return () => {
@@ -159,7 +162,7 @@ export default function FileUpload({
                 : uf
             )
           );
-        }, 200);
+        }, PROGRESS_UPDATE_INTERVAL_MS);
 
         // Track interval for cleanup
         activeIntervalsRef.current.add(progressInterval);
