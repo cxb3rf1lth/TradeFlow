@@ -12,7 +12,8 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
         console.log('SW registered:', registration);
       })
       .catch((error) => {
-        console.log('SW registration failed:', error);
+        console.error('SW registration failed:', error);
+        // Service worker is optional, continue without it
       });
   });
 }
