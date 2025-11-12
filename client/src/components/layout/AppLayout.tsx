@@ -6,6 +6,7 @@ import {
   Users,
   Building2,
   TrendingUp,
+  BarChart3,
   Trello,
   Cloud,
   Calendar,
@@ -13,6 +14,7 @@ import {
   Bot,
   Settings,
 } from "lucide-react";
+import GlobalSearch from "../GlobalSearch";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -20,6 +22,7 @@ interface AppLayoutProps {
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Analytics", href: "/analytics", icon: BarChart3 },
   {
     name: "CRM",
     icon: Users,
@@ -120,6 +123,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
+        {/* Top bar with search */}
+        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1 max-w-xl">
+              <GlobalSearch />
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-600">Welcome back!</span>
+            </div>
+          </div>
+        </div>
         <div className="p-8">{children}</div>
       </main>
     </div>

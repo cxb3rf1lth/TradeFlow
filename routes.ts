@@ -48,6 +48,12 @@ import { sendEmail, formatEmailBody } from "./email";
 import { ClaudeAIService } from "./claude-ai";
 import { MicrosoftGraphService } from "./microsoft-graph";
 import { ConnectorFactory } from "./connectors";
+import {
+  SlackConnector,
+  GoogleWorkspaceConnector,
+  SalesforceConnector,
+  ZendeskConnector,
+} from "./integrations-extended";
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
@@ -883,6 +889,176 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.createIntegrationLog({
         integrationId: "bigin",
+        action: "sync",
+        status: result.success ? "success" : "error",
+        message: `Synced ${result.synced} items`,
+        metadata: result,
+      });
+
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Slack Integration
+  app.post("/api/integrations/slack/send-message", async (req, res) => {
+    try {
+      const { token, channel, text, attachments } = req.body;
+      const connector = new SlackConnector(token);
+      const result = await connector.sendMessage(channel, text, attachments);
+
+      await storage.createIntegrationLog({
+        integrationId: "slack",
+        action: "send_message",
+        status: "success",
+        message: `Message sent to ${channel}`,
+        metadata: result,
+      });
+
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/integrations/slack/channels", async (req, res) => {
+    try {
+      const { token } = req.query;
+      const connector = new SlackConnector(token as string);
+      const channels = await connector.listChannels();
+      res.json(channels);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Google Workspace Integration
+  app.get("/api/integrations/google/emails", async (req, res) => {
+    try {
+      const { accessToken, maxResults } = req.query;
+      const connector = new GoogleWorkspaceConnector(accessToken as string);
+      const emails = await connector.listEmails(maxResults ? parseInt(maxResults as string) : 10);
+      res.json(emails);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/integrations/google/send-email", async (req, res) => {
+    try {
+      const { accessToken, to, subject, body } = req.body;
+      const connector = new GoogleWorkspaceConnector(accessToken);
+      const result = await connector.sendEmail(to, subject, body);
+
+      await storage.createIntegrationLog({
+        integrationId: "google",
+        action: "send_email",
+        status: "success",
+        message: `Email sent to ${to}`,
+        metadata: result,
+      });
+
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/integrations/google/drive/files", async (req, res) => {
+    try {
+      const { accessToken } = req.query;
+      const connector = new GoogleWorkspaceConnector(accessToken as string);
+      const files = await connector.listDriveFiles();
+      res.json(files);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Salesforce Integration
+  app.get("/api/integrations/salesforce/accounts", async (req, res) => {
+    try {
+      const { instanceUrl, accessToken } = req.query;
+      const connector = new SalesforceConnector(instanceUrl as string, accessToken as string);
+      const accounts = await connector.getAccounts();
+      res.json(accounts);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/integrations/salesforce/sync", async (req, res) => {
+    try {
+      const { instanceUrl, accessToken, userId } = req.body;
+      const connector = new SalesforceConnector(instanceUrl, accessToken);
+      const result = await connector.syncToTradeFlow();
+
+      await storage.createIntegrationLog({
+        integrationId: "salesforce",
+        action: "sync",
+        status: result.success ? "success" : "error",
+        message: `Synced ${result.synced} items`,
+        metadata: result,
+      });
+
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/integrations/salesforce/opportunities", async (req, res) => {
+    try {
+      const { instanceUrl, accessToken } = req.query;
+      const connector = new SalesforceConnector(instanceUrl as string, accessToken as string);
+      const opportunities = await connector.getOpportunities();
+      res.json(opportunities);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Zendesk Integration
+  app.get("/api/integrations/zendesk/tickets", async (req, res) => {
+    try {
+      const { subdomain, email, apiToken } = req.query;
+      const connector = new ZendeskConnector(subdomain as string, email as string, apiToken as string);
+      const tickets = await connector.getTickets();
+      res.json(tickets);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/integrations/zendesk/tickets", async (req, res) => {
+    try {
+      const { subdomain, email, apiToken, subject, description, priority, requester } = req.body;
+      const connector = new ZendeskConnector(subdomain, email, apiToken);
+      const ticket = await connector.createTicket({ subject, description, priority }, requester);
+
+      await storage.createIntegrationLog({
+        integrationId: "zendesk",
+        action: "create_ticket",
+        status: "success",
+        message: `Ticket created: ${subject}`,
+        metadata: ticket,
+      });
+
+      res.json(ticket);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/integrations/zendesk/sync", async (req, res) => {
+    try {
+      const { subdomain, email, apiToken, userId } = req.body;
+      const connector = new ZendeskConnector(subdomain, email, apiToken);
+      const result = await connector.syncToTradeFlow();
+
+      await storage.createIntegrationLog({
+        integrationId: "zendesk",
         action: "sync",
         status: result.success ? "success" : "error",
         message: `Synced ${result.synced} items`,

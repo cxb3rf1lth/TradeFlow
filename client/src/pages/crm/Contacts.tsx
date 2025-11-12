@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Mail, Phone, Building2 } from "lucide-react";
 import { useState } from "react";
+import DataExport from "@/components/DataExport";
 
 export default function Contacts() {
   const { data: contacts, isLoading } = useQuery({
@@ -23,10 +24,17 @@ export default function Contacts() {
             Manage your customer relationships
           </p>
         </div>
-        <Button className="flex items-center space-x-2">
-          <Plus className="w-4 h-4" />
-          <span>Add Contact</span>
-        </Button>
+        <div className="flex items-center gap-3">
+          <DataExport
+            data={contacts || []}
+            filename="contacts"
+            columns={["firstName", "lastName", "email", "phone", "position", "company"]}
+          />
+          <Button className="flex items-center space-x-2">
+            <Plus className="w-4 h-4" />
+            <span>Add Contact</span>
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

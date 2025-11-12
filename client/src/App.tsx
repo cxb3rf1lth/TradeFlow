@@ -4,6 +4,7 @@ import Dashboard from "./pages/Dashboard";
 import Contacts from "./pages/crm/Contacts";
 import Companies from "./pages/crm/Companies";
 import Deals from "./pages/crm/Deals";
+import Analytics from "./pages/Analytics";
 import Boards from "./pages/projects/Boards";
 import AIAssistant from "./pages/ai/Assistant";
 import OneDrive from "./pages/microsoft365/OneDrive";
@@ -22,6 +23,9 @@ export default function App() {
           <Route path="/crm/contacts" component={Contacts} />
           <Route path="/crm/companies" component={Companies} />
           <Route path="/crm/deals" component={Deals} />
+
+          {/* Analytics */}
+          <Route path="/analytics" component={Analytics} />
 
           {/* Project Management Routes */}
           <Route path="/projects" component={Boards} />
