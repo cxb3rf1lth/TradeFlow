@@ -3,9 +3,11 @@ import type {
   EmailDraft, InsertEmailDraft, Note, InsertNote, TeamLoungeNote, InsertTeamLoungeNote,
   Contact, InsertContact, Company, InsertCompany, Deal, InsertDeal,
 } from "@shared/schema";
+import { nanoid } from 'nanoid';
 
+// Secure ID generation using nanoid
 function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return nanoid();
 }
 
 export interface IStorage {
