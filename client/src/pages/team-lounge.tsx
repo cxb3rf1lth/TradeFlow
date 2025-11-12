@@ -117,7 +117,6 @@ export default function TeamLounge() {
   };
 
   const pinnedNotes = notes.filter(n => n.isPinned);
-  const regularNotes = notes.filter(n => !n.isPinned);
 
   return (
     <div className="space-y-6">
