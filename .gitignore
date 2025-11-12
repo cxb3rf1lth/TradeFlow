@@ -34,3 +34,11 @@ Thumbs.db
 *.tmp
 .cache/
 .temp/
+
+# Android/Gradle
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.apk
+*.aab
