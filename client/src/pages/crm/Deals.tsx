@@ -45,7 +45,9 @@ export default function Deals() {
                 {deal.value && (
                   <div className="flex items-center text-sm text-gray-600">
                     <DollarSign className="w-4 h-4 mr-2" />
-                    ${parseFloat(deal.value).toLocaleString()} {deal.currency}
+                    {Number.isFinite(parseFloat(deal.value)) 
+                      ? `$${parseFloat(deal.value).toLocaleString()} ${deal.currency}` 
+                      : `$0 ${deal.currency}`}
                   </div>
                 )}
                 {deal.expectedCloseDate && (
