@@ -65,7 +65,7 @@ function ContactsList() {
   const { data: contacts, isLoading } = useQuery({ queryKey: ["/api/contacts"] });
 
   if (isLoading) return <LoadingState />;
-  if (!contacts || contacts.length === 0) {
+  if (!contacts || !Array.isArray(contacts) || contacts.length === 0) {
     return <EmptyState icon={Users} title="No contacts yet" description="Start by adding your first contact" />;
   }
 
@@ -93,7 +93,7 @@ function CompaniesList() {
   const { data: companies, isLoading } = useQuery({ queryKey: ["/api/companies"] });
 
   if (isLoading) return <LoadingState />;
-  if (!companies || companies.length === 0) {
+  if (!companies || !Array.isArray(companies) || companies.length === 0) {
     return <EmptyState icon={Building} title="No companies yet" description="Start by adding your first company" />;
   }
 
@@ -121,7 +121,7 @@ function DealsList() {
   const { data: deals, isLoading } = useQuery({ queryKey: ["/api/deals"] });
 
   if (isLoading) return <LoadingState />;
-  if (!deals || deals.length === 0) {
+  if (!deals || !Array.isArray(deals) || deals.length === 0) {
     return <EmptyState icon={DollarSign} title="No deals yet" description="Start by adding your first deal" />;
   }
 
