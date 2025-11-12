@@ -1,12 +1,18 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Users, Building, DollarSign, Plus, Search } from "lucide-react";
+import { ContactDialog } from "@/components/ContactDialog";
+import { CompanyDialog } from "@/components/CompanyDialog";
+import { DealDialog } from "@/components/DealDialog";
 
 type Tab = "contacts" | "companies" | "deals";
 
 export default function CRM() {
   const [activeTab, setActiveTab] = useState<Tab>("contacts");
   const [searchQuery, setSearchQuery] = useState("");
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [companyDialogOpen, setCompanyDialogOpen] = useState(false);
+  const [dealDialogOpen, setDealDialogOpen] = useState(false);
 
   return (
     <div className="p-8">
@@ -32,17 +38,28 @@ export default function CRM() {
             className="w-full pl-10 pr-4 py-2 bg-slate-900/50 border border-slate-800 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">
+        <button 
+          onClick={() => {
+            if (activeTab === "contacts") setContactDialogOpen(true);
+            else if (activeTab === "companies") setCompanyDialogOpen(true);
+            else if (activeTab === "deals") setDealDialogOpen(true);
+          }}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+        >
           <Plus className="w-5 h-5" />
           Add {activeTab.slice(0, -1)}
         </button>
       </div>
 
       <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-xl p-6">
-        {activeTab === "contacts" && <ContactsList />}
-        {activeTab === "companies" && <CompaniesList />}
-        {activeTab === "deals" && <DealsList />}
+        {activeTab === "contacts" && <ContactsList searchQuery={searchQuery} />}
+        {activeTab === "companies" && <CompaniesList searchQuery={searchQuery} />}
+        {activeTab === "deals" && <DealsList searchQuery={searchQuery} />}
       </div>
+
+      <ContactDialog open={contactDialogOpen} onOpenChange={setContactDialogOpen} />
+      <CompanyDialog open={companyDialogOpen} onOpenChange={setCompanyDialogOpen} />
+      <DealDialog open={dealDialogOpen} onOpenChange={setDealDialogOpen} />
     </div>
   );
 }
@@ -61,17 +78,28 @@ function TabButton({ active, onClick, icon: Icon, label }: any) {
   );
 }
 
-function ContactsList() {
+function ContactsList({ searchQuery }: { searchQuery: string }) {
   const { data: contacts, isLoading } = useQuery({ queryKey: ["/api/contacts"] });
 
   if (isLoading) return <LoadingState />;
-  if (!contacts || contacts.length === 0) {
+  if (!contacts || !Array.isArray(contacts) || contacts.length === 0) {
     return <EmptyState icon={Users} title="No contacts yet" description="Start by adding your first contact" />;
+  }
+
+  const filtered = contacts.filter((contact: any) => 
+    searchQuery === "" || 
+    contact.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    contact.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    contact.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (filtered.length === 0) {
+    return <EmptyState icon={Users} title="No contacts found" description="Try adjusting your search" />;
   }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {contacts.map((contact: any) => (
+      {filtered.map((contact: any) => (
         <div key={contact.id} className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 hover:border-blue-500 transition-all">
           <div className="flex items-start gap-3">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
@@ -89,17 +117,28 @@ function ContactsList() {
   );
 }
 
-function CompaniesList() {
+function CompaniesList({ searchQuery }: { searchQuery: string }) {
   const { data: companies, isLoading } = useQuery({ queryKey: ["/api/companies"] });
 
   if (isLoading) return <LoadingState />;
-  if (!companies || companies.length === 0) {
+  if (!companies || !Array.isArray(companies) || companies.length === 0) {
     return <EmptyState icon={Building} title="No companies yet" description="Start by adding your first company" />;
+  }
+
+  const filtered = companies.filter((company: any) => 
+    searchQuery === "" || 
+    company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    company.domain?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    company.industry?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (filtered.length === 0) {
+    return <EmptyState icon={Building} title="No companies found" description="Try adjusting your search" />;
   }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {companies.map((company: any) => (
+      {filtered.map((company: any) => (
         <div key={company.id} className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 hover:border-blue-500 transition-all">
           <div className="flex items-start gap-3">
             <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
@@ -117,17 +156,27 @@ function CompaniesList() {
   );
 }
 
-function DealsList() {
+function DealsList({ searchQuery }: { searchQuery: string }) {
   const { data: deals, isLoading } = useQuery({ queryKey: ["/api/deals"] });
 
   if (isLoading) return <LoadingState />;
-  if (!deals || deals.length === 0) {
+  if (!deals || !Array.isArray(deals) || deals.length === 0) {
     return <EmptyState icon={DollarSign} title="No deals yet" description="Start by adding your first deal" />;
+  }
+
+  const filtered = deals.filter((deal: any) => 
+    searchQuery === "" || 
+    deal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    deal.status.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (filtered.length === 0) {
+    return <EmptyState icon={DollarSign} title="No deals found" description="Try adjusting your search" />;
   }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {deals.map((deal: any) => (
+      {filtered.map((deal: any) => (
         <div key={deal.id} className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 hover:border-blue-500 transition-all">
           <h3 className="text-white font-semibold mb-2">{deal.title}</h3>
           <div className="flex items-center justify-between">
