@@ -158,20 +158,15 @@ export class MemoryStorage implements IStorage {
   async deleteTeamLoungeNote(id: string) { this.teamLoungeNotes.delete(id); }
 
   async createContact(insertContact: InsertContact) {
-    const contact: Contact = { 
-      id: generateId(), 
+    const contact: Contact = {
+      id: generateId(),
       ...insertContact,
       email: insertContact.email || null,
       phone: insertContact.phone || null,
       companyId: insertContact.companyId || null,
-      position: insertContact.position || null,
-      ownerId: insertContact.ownerId || null,
-      source: insertContact.source || null,
       status: insertContact.status || "active",
-      tags: insertContact.tags || [],
-      customFields: insertContact.customFields || {},
-      createdAt: new Date(), 
-      updatedAt: new Date() 
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
     this.contacts.set(contact.id, contact);
     return contact;
@@ -188,23 +183,15 @@ export class MemoryStorage implements IStorage {
   async deleteContact(id: string) { this.contacts.delete(id); }
 
   async createCompany(insertCompany: InsertCompany) {
-    const company: Company = { 
-      id: generateId(), 
+    const company: Company = {
+      id: generateId(),
       ...insertCompany,
-      domain: insertCompany.domain || null,
       industry: insertCompany.industry || null,
-      size: insertCompany.size || null,
+      website: insertCompany.website || null,
       phone: insertCompany.phone || null,
       address: insertCompany.address || null,
-      city: insertCompany.city || null,
-      state: insertCompany.state || null,
-      country: insertCompany.country || null,
-      postalCode: insertCompany.postalCode || null,
-      ownerId: insertCompany.ownerId || null,
-      tags: insertCompany.tags || [],
-      customFields: insertCompany.customFields || {},
-      createdAt: new Date(), 
-      updatedAt: new Date() 
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
     this.companies.set(company.id, company);
     return company;
@@ -221,21 +208,16 @@ export class MemoryStorage implements IStorage {
   async deleteCompany(id: string) { this.companies.delete(id); }
 
   async createDeal(insertDeal: InsertDeal) {
-    const deal: Deal = { 
-      id: generateId(), 
+    const deal: Deal = {
+      id: generateId(),
       ...insertDeal,
-      value: insertDeal.value || null,
-      currency: insertDeal.currency || "USD",
+      value: insertDeal.value || 0,
+      stage: insertDeal.stage || "lead",
       contactId: insertDeal.contactId || null,
       companyId: insertDeal.companyId || null,
-      ownerId: insertDeal.ownerId || null,
-      expectedCloseDate: insertDeal.expectedCloseDate || null,
-      closedDate: insertDeal.closedDate || null,
-      status: insertDeal.status || "open",
-      tags: insertDeal.tags || [],
-      customFields: insertDeal.customFields || {},
-      createdAt: new Date(), 
-      updatedAt: new Date() 
+      closeDate: insertDeal.closeDate || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
     this.deals.set(deal.id, deal);
     return deal;

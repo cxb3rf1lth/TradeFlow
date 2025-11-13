@@ -20,12 +20,8 @@ export const insertContactSchema = z.object({
   email: z.string().email().optional().nullable(),
   phone: z.string().regex(/^\+?[1-9]\d{1,14}$/).optional().nullable(),
   companyId: z.string().optional().nullable(),
-  position: z.string().max(100).optional().nullable(),
   ownerId: z.string().optional().nullable(),
-  source: z.string().max(50).optional().nullable(),
   status: z.enum(['active', 'inactive', 'archived']).default('active'),
-  tags: z.array(z.string()).max(20).optional(),
-  customFields: z.record(z.any()).optional(),
 });
 
 export const updateContactSchema = insertContactSchema.partial();
@@ -33,37 +29,24 @@ export const updateContactSchema = insertContactSchema.partial();
 // Company schemas
 export const insertCompanySchema = z.object({
   name: z.string().min(1).max(200).trim(),
-  domain: z.string().url().optional().nullable(),
   industry: z.string().max(100).optional().nullable(),
-  size: z.string().max(50).optional().nullable(),
-  phone: z.string().optional().nullable(),
-  address: z.string().max(200).optional().nullable(),
-  city: z.string().max(100).optional().nullable(),
-  state: z.string().max(100).optional().nullable(),
-  country: z.string().max(100).optional().nullable(),
-  postalCode: z.string().max(20).optional().nullable(),
+  website: z.string().url().optional().nullable(),
+  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/).optional().nullable(),
+  address: z.string().max(500).optional().nullable(),
   ownerId: z.string().optional().nullable(),
-  tags: z.array(z.string()).max(20).optional(),
-  customFields: z.record(z.any()).optional(),
 });
 
 export const updateCompanySchema = insertCompanySchema.partial();
 
 // Deal schemas
 export const insertDealSchema = z.object({
-  name: z.string().min(1).max(200).trim(),
-  value: z.number().min(0).optional().nullable(),
-  currency: z.string().length(3).default('USD'),
-  pipelineId: z.string(),
-  stageId: z.string(),
+  title: z.string().min(1).max(200).trim(),
+  value: z.number().int().min(0).optional().nullable(),
+  stage: z.enum(['lead', 'qualified', 'proposal', 'negotiation', 'closed-won', 'closed-lost']).default('lead'),
   contactId: z.string().optional().nullable(),
   companyId: z.string().optional().nullable(),
   ownerId: z.string().optional().nullable(),
-  expectedCloseDate: z.string().optional().nullable(),
-  closedDate: z.string().optional().nullable(),
-  status: z.enum(['open', 'won', 'lost', 'abandoned']).default('open'),
-  tags: z.array(z.string()).max(20).optional(),
-  customFields: z.record(z.any()).optional(),
+  closeDate: z.string().datetime().optional().nullable(),
 });
 
 export const updateDealSchema = insertDealSchema.partial();
