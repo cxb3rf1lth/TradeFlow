@@ -5,7 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
-export default function Login() {
+interface LoginProps {
+  onLoginSuccess?: () => void;
+}
+
+export default function Login({ onLoginSuccess }: LoginProps) {
   const [, setLocation] = useLocation();
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState("");
@@ -40,6 +44,11 @@ export default function Login() {
       // Store token and user data
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
+
+      // Call the callback to update parent component state
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      }
 
       // Redirect to dashboard
       setLocation("/");

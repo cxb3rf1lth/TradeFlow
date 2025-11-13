@@ -48,7 +48,7 @@ export default function App() {
   if (!isAuthenticated || location === "/login") {
     return (
       <>
-        <Login />
+        <Login onLoginSuccess={() => setIsAuthenticated(true)} />
         <Toaster />
       </>
     );
