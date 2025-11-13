@@ -1,20 +1,55 @@
 import express, { type Request, Response, NextFunction } from "express";
+import helmet from "helmet";
+import passport from "passport";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { globalLimiter } from "./middleware/rateLimit";
 
 const app = express();
+
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+}));
+
+// CORS configuration
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGINS || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
+// Initialize passport
+app.use(passport.initialize());
+
+// Rate limiting
+app.use('/api', globalLimiter);
 
 declare module 'http' {
   interface IncomingMessage {
     rawBody: unknown
   }
 }
+
 app.use(express.json({
   verify: (req, _res, buf) => {
     req.rawBody = buf;
-  }
+  },
+  limit: '10mb',
 }));
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -49,12 +84,21 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
+  // Global error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
 
-    res.status(status).json({ message });
-    throw err;
+    // Don't leak error details in production
+    const message = process.env.NODE_ENV === 'production'
+      ? 'Internal Server Error'
+      : err.message || "Internal Server Error";
+
+    res.status(status).json({
+      error: message,
+      ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+    });
+
+    console.error('Error:', err);
   });
 
   // importantly only setup vite in development and after

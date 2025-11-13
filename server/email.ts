@@ -34,10 +34,5 @@ export async function sendEmail(options: SendEmailOptions) {
   }
 }
 
-export function formatEmailBody(body: string): string {
-  // Convert plain text to HTML with basic formatting
-  return body
-    .split('\n\n')
-    .map(para => `<p>${para.replace(/\n/g, '<br>')}</p>`)
-    .join('');
-}
+// Import sanitization from utils
+export { formatEmailBody } from './utils/sanitize';
