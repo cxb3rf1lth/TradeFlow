@@ -39,7 +39,10 @@ print_warning "Make sure you have reviewed BRANCH_CLEANUP.md before proceeding."
 echo ""
 read -p "Do you want to continue? (yes/no): " confirmation
 
-if [ "$confirmation" != "yes" ]; then
+# Convert to lowercase for case-insensitive comparison
+confirmation_lower=$(echo "$confirmation" | tr '[:upper:]' '[:lower:]')
+
+if [[ ! "$confirmation_lower" =~ ^(y|yes)$ ]]; then
     print_info "Cleanup cancelled."
     exit 0
 fi
@@ -57,11 +60,13 @@ delete_branch() {
     local branch=$1
     print_info "Deleting branch: $branch"
     
-    if git push origin --delete "$branch" 2>/dev/null; then
+    local error_output
+    if error_output=$(git push origin --delete "$branch" 2>&1); then
         print_success "Deleted: $branch"
         ((deleted++))
     else
         print_error "Failed to delete: $branch"
+        print_error "  Error: $error_output"
         ((failed++))
     fi
 }
