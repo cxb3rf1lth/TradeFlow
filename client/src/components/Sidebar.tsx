@@ -1,9 +1,10 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, ChevronLeft, ChevronRight, CheckSquare, Zap, Mail, Link2, Settings } from "lucide-react";
+import { LayoutDashboard, Users, ChevronLeft, ChevronRight, CheckSquare, Zap, Mail, Link2, Settings, LogOut } from "lucide-react";
 
 interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
+  onLogout?: () => void;
 }
 
 const menuItems = [
@@ -16,12 +17,12 @@ const menuItems = [
   { path: "/admin", icon: Settings, label: "Admin" },
 ];
 
-export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
+export default function Sidebar({ isOpen, onToggle, onLogout }: SidebarProps) {
   const [location] = useLocation();
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-full bg-zinc-950/95 backdrop-blur-lg border-r border-zinc-900 transition-all duration-300 z-50 ${
+      className={`fixed left-0 top-0 h-full bg-zinc-950/95 backdrop-blur-lg border-r border-zinc-900 transition-all duration-300 z-50 flex flex-col ${
         isOpen ? "w-64" : "w-16"
       }`}
     >
@@ -43,7 +44,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
         </button>
       </div>
 
-      <nav className="p-4 space-y-2">
+      <nav className="p-4 space-y-2 flex-1">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = location === item.path;
@@ -64,6 +65,18 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
           );
         })}
       </nav>
+
+      {onLogout && (
+        <div className="p-4 border-t border-zinc-900">
+          <button
+            onClick={onLogout}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-red-400 hover:bg-red-500/10 hover:text-red-300 w-full"
+          >
+            <LogOut className="w-5 h-5 flex-shrink-0" />
+            {isOpen && <span className="text-sm font-medium">Logout</span>}
+          </button>
+        </div>
+      )}
     </aside>
   );
 }
