@@ -3,7 +3,7 @@
 # TradeFlow - Branch Cleanup Script
 # This script deletes stale branches after analysis
 
-set -e  # Exit on error
+# Note: Not using 'set -e' to allow proper error handling in delete_branch function
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -58,6 +58,13 @@ failed=0
 # Function to delete a branch
 delete_branch() {
     local branch=$1
+    
+    # Check if branch exists on remote
+    if ! git ls-remote --heads origin "$branch" | grep -q "$branch"; then
+        print_warning "Branch does not exist (may be already deleted): $branch"
+        return
+    fi
+    
     print_info "Deleting branch: $branch"
     
     local error_output
