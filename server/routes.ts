@@ -5,7 +5,7 @@ import { storage } from "./memory-storage";
 import { authService } from "./services/auth";
 import { requireAuth, requireRole } from "./middleware/auth";
 import { validateRequest, validateQuery, validateParams } from "./middleware/validation";
-import { authLimiter, emailLimiter, apiLimiter } from "./middleware/rateLimit";
+import { authLimiter, registerLimiter, emailLimiter, apiLimiter } from "./middleware/rateLimit";
 import {
   registerSchema,
   loginSchema,
@@ -29,7 +29,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== AUTH ROUTES ====================
 
   app.post("/api/auth/register",
-    authLimiter,
+    registerLimiter,
     validateRequest(registerSchema),
     async (req, res, next) => {
       try {

@@ -15,6 +15,13 @@ export const authLimiter = rateLimit({
   skipSuccessfulRequests: true,
 });
 
+export const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // 10 registration attempts per hour
+  message: 'Too many registration attempts, please try again later.',
+  skipSuccessfulRequests: true,
+});
+
 export const emailLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 50, // 50 emails per hour
