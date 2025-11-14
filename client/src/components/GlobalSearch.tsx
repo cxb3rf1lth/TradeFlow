@@ -99,7 +99,7 @@ export default function GlobalSearch() {
           title: `${contact.firstName} ${contact.lastName}`,
           subtitle: contact.company || contact.email,
           description: contact.jobTitle,
-          url: `/crm/contacts`,
+          url: `/crm/contacts/${contact.id}`,
         });
       }
     });

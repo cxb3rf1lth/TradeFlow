@@ -72,15 +72,35 @@ export default function Analytics() {
       ).map(([name, value]) => ({ name, value: value as number }))
     : [];
 
-  // Revenue by month (mock data - in production, calculate from actual data)
-  const revenueData: ChartDataPoint[] = [
-    { month: "Jan", revenue: 45000, deals: 12 },
-    { month: "Feb", revenue: 52000, deals: 15 },
-    { month: "Mar", revenue: 61000, deals: 18 },
-    { month: "Apr", revenue: 58000, deals: 16 },
-    { month: "May", revenue: 70000, deals: 22 },
-    { month: "Jun", revenue: 85000, deals: 25 },
-  ];
+  // Revenue by month (calculated from actual deals data)
+  const revenueData: ChartDataPoint[] = (() => {
+    if (!deals) return [];
+    // Group deals by month (using actualCloseDate or createdAt)
+    const monthly: Record<string, { revenue: number; deals: number }> = {};
+    deals.forEach((deal) => {
+      // Use actualCloseDate if available, otherwise createdAt, otherwise skip
+      const dateStr = (deal.actualCloseDate || deal.createdAt) as string | undefined;
+      if (!dateStr) return;
+      const date = new Date(dateStr);
+      // Format as "MMM" (e.g., "Jan")
+      const month = date.toLocaleString("en-US", { month: "short" });
+      if (!monthly[month]) {
+        monthly[month] = { revenue: 0, deals: 0 };
+      }
+      const value = deal.value ? parseFloat(String(deal.value)) : 0;
+      monthly[month].revenue += isNaN(value) ? 0 : value;
+      monthly[month].deals += 1;
+    });
+    // Sort months by calendar order (Jan, Feb, ...)
+    const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return monthOrder
+      .filter((m) => monthly[m])
+      .map((m) => ({
+        month: m,
+        revenue: monthly[m].revenue,
+        deals: monthly[m].deals,
+      }));
+  })();
 
   // Activity timeline
   const activityData: ChartDataPoint[] = [

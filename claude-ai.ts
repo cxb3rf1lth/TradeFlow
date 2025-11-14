@@ -12,12 +12,16 @@ export interface AIAnalysisResult {
 
 export class ClaudeAIService {
   private client: Anthropic;
-  private model: string = "claude-3-5-sonnet-20241022";
+  private model: string;
 
-  constructor(apiKey: string) {
+  constructor(apiKey: string, modelVersion?: string) {
     this.client = new Anthropic({
       apiKey,
     });
+    this.model =
+      modelVersion ||
+      process.env.CLAUDE_MODEL_VERSION ||
+      "claude-3-5-sonnet-20241022";
   }
 
   // ========== Email Analysis ==========

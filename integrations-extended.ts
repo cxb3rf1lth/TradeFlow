@@ -246,14 +246,16 @@ export class GoogleWorkspaceConnector {
 export class SalesforceConnector {
   private client: AxiosInstance;
   private instanceUrl: string;
+  private apiVersion: string;
 
-  constructor(config: { accessToken: string; instanceUrl: string }) {
+  constructor(config: { accessToken: string; instanceUrl: string; apiVersion?: string }) {
     if (!config.accessToken || !config.instanceUrl) {
       throw new Error("Salesforce access token and instance URL are required");
     }
     this.instanceUrl = config.instanceUrl;
+    this.apiVersion = config.apiVersion || "v58.0";
     this.client = axios.create({
-      baseURL: `${this.instanceUrl}/services/data/v58.0`,
+      baseURL: `${this.instanceUrl}/services/data/${this.apiVersion}`,
       headers: {
         Authorization: `Bearer ${config.accessToken}`,
         "Content-Type": "application/json",
