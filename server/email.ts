@@ -1,6 +1,8 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY 
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
 export interface SendEmailOptions {
   to: string | string[];
@@ -11,6 +13,11 @@ export interface SendEmailOptions {
 
 export async function sendEmail(options: SendEmailOptions) {
   const { to, subject, html, from = 'onboarding@resend.dev' } = options;
+  
+  if (!resend) {
+    console.error('Resend API key not configured');
+    return { success: false, error: 'Email service not configured' };
+  }
   
   try {
     const data = await resend.emails.send({
@@ -27,10 +34,5 @@ export async function sendEmail(options: SendEmailOptions) {
   }
 }
 
-export function formatEmailBody(body: string): string {
-  // Convert plain text to HTML with basic formatting
-  return body
-    .split('\n\n')
-    .map(para => `<p>${para.replace(/\n/g, '<br>')}</p>`)
-    .join('');
-}
+// Import sanitization from utils
+export { formatEmailBody } from './utils/sanitize';
