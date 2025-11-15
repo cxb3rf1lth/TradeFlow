@@ -2,9 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, MapPin, Users } from "lucide-react";
+import type { Company } from "@/types/api";
 
 export default function Companies() {
-  const { data: companies, isLoading } = useQuery({
+  const { data: companies = [], isLoading } = useQuery<Company[]>({
     queryKey: ["/api/crm/companies"],
   });
 
