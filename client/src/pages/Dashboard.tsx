@@ -2,21 +2,22 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Building2, TrendingUp, Trello, Cloud, Bot } from "lucide-react";
 import { Link } from "wouter";
+import type { Contact, Company, Deal, Board } from "@/types/api";
 
 export default function Dashboard() {
-  const { data: contacts } = useQuery({
+  const { data: contacts = [] } = useQuery<Contact[]>({
     queryKey: ["/api/crm/contacts"],
   });
 
-  const { data: companies } = useQuery({
+  const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ["/api/crm/companies"],
   });
 
-  const { data: deals } = useQuery({
+  const { data: deals = [] } = useQuery<Deal[]>({
     queryKey: ["/api/crm/deals"],
   });
 
-  const { data: boards } = useQuery({
+  const { data: boards = [] } = useQuery<Board[]>({
     queryKey: ["/api/boards"],
   });
 

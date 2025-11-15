@@ -22,3 +22,47 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+// Helper function for API requests
+export async function apiRequest(
+  methodOrUrl: string,
+  urlOrOptions?: string | RequestInit,
+  dataOrUndefined?: any
+): Promise<Response> {
+  let method: string;
+  let url: string;
+  let data: any;
+
+  // Support both signatures:
+  // 1. apiRequest(method, url, data) - legacy
+  // 2. apiRequest(url, options) - new
+  if (typeof urlOrOptions === 'string') {
+    method = methodOrUrl;
+    url = urlOrOptions;
+    data = dataOrUndefined;
+  } else {
+    method = 'GET';
+    url = methodOrUrl;
+    data = undefined;
+  }
+
+  const options: RequestInit = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  };
+
+  if (data) {
+    options.body = JSON.stringify(data);
+  }
+
+  const res = await fetch(url, options);
+
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(error || `HTTP ${res.status}: ${res.statusText}`);
+  }
+
+  return res;
+}

@@ -2,9 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Trello } from "lucide-react";
+import type { Board } from "@/types/api";
 
 export default function Boards() {
-  const { data: boards, isLoading } = useQuery({
+  const { data: boards = [], isLoading } = useQuery<Board[]>({
     queryKey: ["/api/boards"],
   });
 
