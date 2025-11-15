@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Users, ChevronLeft, ChevronRight, CheckSquare, Zap, Mail, Link2, Settings } from "lucide-react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -9,6 +9,11 @@ interface SidebarProps {
 const menuItems = [
   { path: "/", icon: LayoutDashboard, label: "Dashboard" },
   { path: "/crm", icon: Users, label: "CRM" },
+  { path: "/boards", icon: CheckSquare, label: "Boards" },
+  { path: "/automations", icon: Zap, label: "Automations" },
+  { path: "/email", icon: Mail, label: "Email Center" },
+  { path: "/integrations", icon: Link2, label: "Integrations" },
+  { path: "/admin", icon: Settings, label: "Admin" },
 ];
 
 export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
@@ -16,24 +21,24 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-full bg-slate-900/80 backdrop-blur-lg border-r border-slate-800 transition-all duration-300 z-50 ${
+      className={`fixed left-0 top-0 h-full bg-zinc-950/95 backdrop-blur-lg border-r border-zinc-900 transition-all duration-300 z-50 ${
         isOpen ? "w-64" : "w-16"
       }`}
     >
-      <div className="flex items-center justify-between p-4 border-b border-slate-800">
+      <div className="flex items-center justify-between p-4 border-b border-zinc-900">
         {isOpen && (
-          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+          <h1 className="text-xl font-bold bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
             TradeFlow
           </h1>
         )}
         <button
           onClick={onToggle}
-          className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+          className="p-2 hover:bg-zinc-900 rounded-lg transition-colors"
         >
           {isOpen ? (
-            <ChevronLeft className="w-5 h-5 text-slate-400" />
+            <ChevronLeft className="w-5 h-5 text-zinc-400" />
           ) : (
-            <ChevronRight className="w-5 h-5 text-slate-400" />
+            <ChevronRight className="w-5 h-5 text-zinc-400" />
           )}
         </button>
       </div>
@@ -48,8 +53,8 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
               <a
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
                   isActive
-                    ? "bg-blue-500/20 text-blue-400"
-                    : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                    ? "bg-yellow-600/20 text-yellow-400 border border-yellow-600/30"
+                    : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
                 }`}
               >
                 <Icon className="w-5 h-5 flex-shrink-0" />
