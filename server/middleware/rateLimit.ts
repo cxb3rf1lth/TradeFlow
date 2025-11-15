@@ -19,10 +19,7 @@ export const emailLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 50, // 50 emails per hour
   message: 'Email rate limit exceeded, please try again later.',
-  keyGenerator: (req) => {
-    // Rate limit by user ID if authenticated, otherwise by IP
-    return (req.user as any)?.id || req.ip || 'unknown';
-  },
+  // Removed custom keyGenerator to use default IP-based rate limiting with proper IPv6 support
 });
 
 export const apiLimiter = rateLimit({

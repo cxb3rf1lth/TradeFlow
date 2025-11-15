@@ -1,43 +1,49 @@
-import { useState } from "react";
 import { Route, Switch } from "wouter";
+import { Toaster } from "@/components/ui/toaster";
 import Dashboard from "./pages/Dashboard";
-import CRM from "./pages/CRM";
-import Boards from "./pages/Boards";
-import Automations from "./pages/Automations";
-import Email from "./pages/Email";
-import Integrations from "./pages/Integrations";
-import Admin from "./pages/Admin";
-import Sidebar from "./components/Sidebar";
-import { Toaster } from "./components/ui/toaster";
+import Contacts from "./pages/crm/Contacts";
+import Companies from "./pages/crm/Companies";
+import Deals from "./pages/crm/Deals";
+import Analytics from "./pages/Analytics";
+import Boards from "./pages/projects/Boards";
+import AIAssistant from "./pages/ai/Assistant";
+import OneDrive from "./pages/microsoft365/OneDrive";
+import Calendar from "./pages/microsoft365/Calendar";
+import Teams from "./pages/microsoft365/Teams";
+import AppLayout from "./components/layout/AppLayout";
 
 export default function App() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-
   return (
-    <div className="flex h-screen bg-black dark">
-      <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-
-      <main className={`flex-1 overflow-auto transition-all duration-300 bg-gradient-to-br from-black via-zinc-950 to-black ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
+    <>
+      <AppLayout>
         <Switch>
           <Route path="/" component={Dashboard} />
-          <Route path="/crm" component={CRM} />
-          <Route path="/boards" component={Boards} />
-          <Route path="/automations" component={Automations} />
-          <Route path="/email" component={Email} />
-          <Route path="/integrations" component={Integrations} />
-          <Route path="/admin" component={Admin} />
-          <Route>
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <h1 className="text-4xl font-bold text-white mb-4">404</h1>
-                <p className="text-zinc-500">Page not found</p>
-              </div>
-            </div>
-          </Route>
+
+          {/* CRM Routes */}
+          <Route path="/crm/contacts" component={Contacts} />
+          <Route path="/crm/companies" component={Companies} />
+          <Route path="/crm/deals" component={Deals} />
+
+          {/* Analytics */}
+          <Route path="/analytics" component={Analytics} />
+
+          {/* Project Management Routes */}
+          <Route path="/projects" component={Boards} />
+
+          {/* Microsoft 365 Routes */}
+          <Route path="/onedrive" component={OneDrive} />
+          <Route path="/calendar" component={Calendar} />
+          <Route path="/teams" component={Teams} />
+
+          {/* AI Assistant */}
+          <Route path="/ai" component={AIAssistant} />
+
+          {/* Fallback */}
+          <Route>404 - Page Not Found</Route>
         </Switch>
-      </main>
+      </AppLayout>
 
       <Toaster />
-    </div>
+    </>
   );
 }
