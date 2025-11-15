@@ -59,8 +59,6 @@ install_dependencies() {
         print_success "Dependencies installed successfully!"
     else
         print_info "Dependencies already installed."
-        
-        
     fi
 }
 
