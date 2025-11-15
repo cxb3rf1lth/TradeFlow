@@ -24,7 +24,7 @@ const jwtOptions = {
 };
 
 passport.use(
-  new JwtStrategy(jwtOptions, async (payload, done) => {
+  new JwtStrategy(jwtOptions, async (payload: any, done: any) => {
     try {
       const user = await storage.getUser(payload.id);
       if (user) {
