@@ -2,6 +2,8 @@ import type {
   User, InsertUser, EmailTemplate, InsertEmailTemplate, EmailLog, InsertEmailLog,
   EmailDraft, InsertEmailDraft, Note, InsertNote, TeamLoungeNote, InsertTeamLoungeNote,
   Contact, InsertContact, Company, InsertCompany, Deal, InsertDeal,
+  Integration, InsertIntegration, AutomationRule, InsertAutomationRule,
+  Webhook, InsertWebhook, Document, InsertDocument,
 } from "@shared/schema";
 import { nanoid } from 'nanoid';
 
@@ -61,6 +63,27 @@ export interface IStorage {
   getCards(listId: string): Promise<any[]>;
   updateCard(id: string, card: any): Promise<any | undefined>;
   deleteCard(id: string): Promise<void>;
+  // Integration management
+  createIntegration(integration: InsertIntegration): Promise<Integration>;
+  getIntegrations(): Promise<Integration[]>;
+  getIntegration(id: string): Promise<Integration | undefined>;
+  deleteIntegration(id: string): Promise<void>;
+  // Automation rules
+  createAutomationRule(rule: InsertAutomationRule): Promise<AutomationRule>;
+  getAutomationRules(): Promise<AutomationRule[]>;
+  getAutomationRule(id: string): Promise<AutomationRule | undefined>;
+  updateAutomationRule(id: string, rule: Partial<InsertAutomationRule>): Promise<AutomationRule | undefined>;
+  deleteAutomationRule(id: string): Promise<void>;
+  // Webhooks
+  createWebhook(webhook: InsertWebhook): Promise<Webhook>;
+  getWebhooks(): Promise<Webhook[]>;
+  getWebhook(id: string): Promise<Webhook | undefined>;
+  deleteWebhook(id: string): Promise<void>;
+  // Documents
+  createDocument(document: InsertDocument): Promise<Document>;
+  getDocuments(): Promise<Document[]>;
+  getDocument(id: string): Promise<Document | undefined>;
+  deleteDocument(id: string): Promise<void>;
 }
 
 export class MemoryStorage implements IStorage {
@@ -76,6 +99,10 @@ export class MemoryStorage implements IStorage {
   private boards = new Map<string, any>();
   private boardLists = new Map<string, any>();
   private cards = new Map<string, any>();
+  private integrations = new Map<string, Integration>();
+  private automationRules = new Map<string, AutomationRule>();
+  private webhooks = new Map<string, Webhook>();
+  private documents = new Map<string, Document>();
 
   async getUser(id: string) { return this.users.get(id); }
   async getUserByUsername(username: string) { return Array.from(this.users.values()).find(u => u.username === username); }
@@ -305,6 +332,82 @@ export class MemoryStorage implements IStorage {
     return updated;
   }
   async deleteCard(id: string) { this.cards.delete(id); }
+
+  // Integration management
+  async createIntegration(insertIntegration: InsertIntegration) {
+    const integration: Integration = {
+      id: generateId(),
+      ...insertIntegration,
+      status: insertIntegration.status || "disconnected",
+      lastSync: insertIntegration.lastSync || null,
+    };
+    this.integrations.set(integration.id, integration);
+    return integration;
+  }
+  async getIntegrations() { return Array.from(this.integrations.values()); }
+  async getIntegration(id: string) { return this.integrations.get(id); }
+  async deleteIntegration(id: string) { this.integrations.delete(id); }
+
+  // Automation rules
+  async createAutomationRule(insertRule: InsertAutomationRule) {
+    const rule: AutomationRule = {
+      id: generateId(),
+      ...insertRule,
+      enabled: insertRule.enabled ?? true,
+      createdAt: new Date(),
+    };
+    this.automationRules.set(rule.id, rule);
+    return rule;
+  }
+  async getAutomationRules() {
+    return Array.from(this.automationRules.values())
+      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+  }
+  async getAutomationRule(id: string) { return this.automationRules.get(id); }
+  async updateAutomationRule(id: string, update: Partial<InsertAutomationRule>) {
+    const rule = this.automationRules.get(id);
+    if (!rule) return undefined;
+    const updated: AutomationRule = { ...rule, ...update };
+    this.automationRules.set(id, updated);
+    return updated;
+  }
+  async deleteAutomationRule(id: string) { this.automationRules.delete(id); }
+
+  // Webhooks
+  async createWebhook(insertWebhook: InsertWebhook) {
+    const webhook: Webhook = {
+      id: generateId(),
+      ...insertWebhook,
+      enabled: insertWebhook.enabled ?? true,
+      externalId: insertWebhook.externalId || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.webhooks.set(webhook.id, webhook);
+    return webhook;
+  }
+  async getWebhooks() { return Array.from(this.webhooks.values()); }
+  async getWebhook(id: string) { return this.webhooks.get(id); }
+  async deleteWebhook(id: string) { this.webhooks.delete(id); }
+
+  // Documents
+  async createDocument(insertDocument: InsertDocument) {
+    const document: Document = {
+      id: generateId(),
+      ...insertDocument,
+      parentId: insertDocument.parentId || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.documents.set(document.id, document);
+    return document;
+  }
+  async getDocuments() {
+    return Array.from(this.documents.values())
+      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+  }
+  async getDocument(id: string) { return this.documents.get(id); }
+  async deleteDocument(id: string) { this.documents.delete(id); }
 }
 
 export const storage = new MemoryStorage();

@@ -665,6 +665,600 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
+  // ==================== INTEGRATION ROUTES ====================
+
+  // Get all available integrations
+  app.get("/api/integrations/available",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const { IntegrationFactory } = await import("./integrations/integration-factory");
+        const integrations = IntegrationFactory.getAvailableIntegrations();
+        res.json(integrations);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Get user's connected integrations
+  app.get("/api/integrations",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const integrations = await storage.getIntegrations();
+        res.json(integrations);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // OAuth: Initiate authorization for an integration
+  app.get("/api/integrations/:type/authorize",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const { type } = req.params;
+        const { IntegrationFactory } = await import("./integrations/integration-factory");
+        const { OAuthHelper, OAuthStateStore } = await import("./integrations/oauth-helper");
+
+        const connector = IntegrationFactory.createConnector(type as any);
+        const state = OAuthHelper.generateState();
+
+        // Store state with user info
+        OAuthStateStore.set(state, req.user!.id, type);
+
+        const authUrl = connector.getAuthorizationUrl(state);
+        res.json({ authUrl });
+      } catch (error: any) {
+        res.status(400).json({ error: error.message });
+      }
+    }
+  );
+
+  // OAuth: Callback handler for all integrations
+  app.get("/api/integrations/:type/callback",
+    async (req, res) => {
+      try {
+        const { type } = req.params;
+        const { code, state } = req.query;
+
+        if (!code || !state) {
+          return res.status(400).json({ error: "Missing code or state parameter" });
+        }
+
+        const { IntegrationFactory } = await import("./integrations/integration-factory");
+        const { OAuthHelper, OAuthStateStore } = await import("./integrations/oauth-helper");
+
+        // Verify state
+        const stateData = OAuthStateStore.get(state as string);
+        if (!stateData) {
+          return res.status(400).json({ error: "Invalid or expired state" });
+        }
+
+        // Exchange code for token
+        const connector = IntegrationFactory.createConnector(type as any);
+        const tokenData = await connector.exchangeCodeForToken(code as string);
+
+        // Store token in database
+        const integration = await storage.createIntegration({
+          name: type,
+          type: type,
+          status: "connected",
+        });
+
+        // In a real implementation, store the token securely
+        console.log("Integration connected:", { type, userId: stateData.userId });
+
+        // Redirect to success page
+        res.redirect(`/integrations?status=success&integration=${type}`);
+      } catch (error: any) {
+        console.error("OAuth callback error:", error);
+        res.redirect(`/integrations?status=error&message=${encodeURIComponent(error.message)}`);
+      }
+    }
+  );
+
+  // Sync integration data
+  app.post("/api/integrations/:type/sync",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const { type } = req.params;
+        const { syncType } = req.body; // contacts, companies, deals, boards, etc.
+
+        const { IntegrationFactory } = await import("./integrations/integration-factory");
+        const connector = IntegrationFactory.createConnector(type as any);
+
+        let result;
+        switch (syncType) {
+          case "contacts":
+            result = await connector.syncContacts();
+            break;
+          case "companies":
+            result = await connector.syncCompanies();
+            break;
+          case "deals":
+            result = await connector.syncDeals();
+            break;
+          default:
+            return res.status(400).json({ error: "Invalid sync type" });
+        }
+
+        res.json(result);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Test integration connection
+  app.post("/api/integrations/:type/test",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const { type } = req.params;
+        const { IntegrationFactory } = await import("./integrations/integration-factory");
+        const connector = IntegrationFactory.createConnector(type as any);
+
+        const isConnected = await connector.testConnection();
+        res.json({ success: isConnected });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Disconnect integration
+  app.delete("/api/integrations/:id",
+    requireAuth,
+    validateParams(idParamSchema),
+    async (req, res) => {
+      try {
+        await storage.deleteIntegration(req.params.id);
+        res.json({ success: true });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // ==================== AI ROUTES (Claude) ====================
+
+  // Analyze email
+  app.post("/api/ai/analyze-email",
+    requireAuth,
+    apiLimiter,
+    async (req, res) => {
+      try {
+        const { subject, body, from, to } = req.body;
+        const { claudeAI } = await import("./services/claude-ai");
+
+        const analysis = await claudeAI.analyzeEmail({ subject, body, from, to });
+        res.json(analysis);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Analyze deal
+  app.post("/api/ai/analyze-deal",
+    requireAuth,
+    apiLimiter,
+    async (req, res) => {
+      try {
+        const { claudeAI } = await import("./services/claude-ai");
+        const insights = await claudeAI.analyzeDeal(req.body);
+        res.json(insights);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Analyze contact
+  app.post("/api/ai/analyze-contact",
+    requireAuth,
+    apiLimiter,
+    async (req, res) => {
+      try {
+        const { claudeAI } = await import("./services/claude-ai");
+        const insights = await claudeAI.analyzeContact(req.body);
+        res.json(insights);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Generate email response
+  app.post("/api/ai/generate-email",
+    requireAuth,
+    apiLimiter,
+    async (req, res) => {
+      try {
+        const { originalEmail, tone, purpose, keyPoints } = req.body;
+        const { claudeAI } = await import("./services/claude-ai");
+
+        const response = await claudeAI.generateEmailResponse({
+          originalEmail,
+          tone,
+          purpose,
+          keyPoints,
+        });
+        res.json({ response });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Analyze meeting notes
+  app.post("/api/ai/analyze-meeting",
+    requireAuth,
+    apiLimiter,
+    async (req, res) => {
+      try {
+        const { notes } = req.body;
+        const { claudeAI } = await import("./services/claude-ai");
+
+        const analysis = await claudeAI.analyzeMeetingNotes(notes);
+        res.json(analysis);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Summarize text
+  app.post("/api/ai/summarize",
+    requireAuth,
+    apiLimiter,
+    async (req, res) => {
+      try {
+        const { text, maxLength } = req.body;
+        const { claudeAI } = await import("./services/claude-ai");
+
+        const summary = await claudeAI.summarizeText(text, maxLength);
+        res.json({ summary });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Sentiment analysis
+  app.post("/api/ai/sentiment",
+    requireAuth,
+    apiLimiter,
+    async (req, res) => {
+      try {
+        const { text } = req.body;
+        const { claudeAI } = await import("./services/claude-ai");
+
+        const sentiment = await claudeAI.analyzeSentiment(text);
+        res.json(sentiment);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Get automation suggestions
+  app.post("/api/ai/suggest-automations",
+    requireAuth,
+    apiLimiter,
+    async (req, res) => {
+      try {
+        const { recentActivities, painPoints } = req.body;
+        const { claudeAI } = await import("./services/claude-ai");
+
+        const suggestions = await claudeAI.suggestAutomations({
+          userRole: req.user!.role,
+          recentActivities,
+          painPoints,
+        });
+        res.json(suggestions);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // AI Chat
+  app.post("/api/ai/chat",
+    requireAuth,
+    apiLimiter,
+    async (req, res) => {
+      try {
+        const { message, conversationHistory } = req.body;
+        const { claudeAI } = await import("./services/claude-ai");
+
+        const response = await claudeAI.chat(message, conversationHistory);
+        res.json({ response });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // ==================== AUTOMATION ROUTES ====================
+
+  // Get all automation rules
+  app.get("/api/automations",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const automations = await storage.getAutomationRules();
+        res.json(automations);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Create automation rule
+  app.post("/api/automations",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const automation = await storage.createAutomationRule({
+          ...req.body,
+          createdBy: req.user!.id,
+        });
+        res.status(201).json(automation);
+      } catch (error: any) {
+        res.status(400).json({ error: error.message });
+      }
+    }
+  );
+
+  // Update automation rule
+  app.patch("/api/automations/:id",
+    requireAuth,
+    validateParams(idParamSchema),
+    async (req, res) => {
+      try {
+        const automation = await storage.updateAutomationRule(req.params.id, req.body);
+        if (!automation) {
+          return res.status(404).json({ error: "Automation not found" });
+        }
+        res.json(automation);
+      } catch (error: any) {
+        res.status(400).json({ error: error.message });
+      }
+    }
+  );
+
+  // Delete automation rule
+  app.delete("/api/automations/:id",
+    requireAuth,
+    validateParams(idParamSchema),
+    async (req, res) => {
+      try {
+        await storage.deleteAutomationRule(req.params.id);
+        res.json({ success: true });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Execute automation (manual trigger)
+  app.post("/api/automations/:id/execute",
+    requireAuth,
+    validateParams(idParamSchema),
+    async (req, res) => {
+      try {
+        const automation = await storage.getAutomationRule(req.params.id);
+        if (!automation) {
+          return res.status(404).json({ error: "Automation not found" });
+        }
+
+        const { automationEngine } = await import("./services/automation-engine");
+        const result = await automationEngine.executeAutomation(automation, {
+          trigger: { type: "manual", data: req.body },
+          user: { id: req.user!.id, role: req.user!.role },
+        });
+
+        res.json(result);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // ==================== WEBHOOK ROUTES ====================
+
+  // Get all webhooks
+  app.get("/api/webhooks",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const webhooks = await storage.getWebhooks();
+        res.json(webhooks);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Create webhook
+  app.post("/api/webhooks",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const { integrationId, url, events } = req.body;
+        const { webhookService } = await import("./services/webhook-service");
+
+        // Generate secret
+        const secret = require("crypto").randomBytes(32).toString("hex");
+
+        // Register webhook with external service
+        const result = await webhookService.registerWebhook(
+          req.body.integrationType,
+          url,
+          events,
+          secret
+        );
+
+        if (!result.success) {
+          return res.status(400).json({ error: result.message });
+        }
+
+        // Store webhook in database
+        const webhook = await storage.createWebhook({
+          integrationId,
+          url,
+          events: JSON.stringify(events),
+          secret,
+          externalId: result.webhookId,
+        });
+
+        res.status(201).json(webhook);
+      } catch (error: any) {
+        res.status(400).json({ error: error.message });
+      }
+    }
+  );
+
+  // Delete webhook
+  app.delete("/api/webhooks/:id",
+    requireAuth,
+    validateParams(idParamSchema),
+    async (req, res) => {
+      try {
+        await storage.deleteWebhook(req.params.id);
+        res.json({ success: true });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Test webhook
+  app.post("/api/webhooks/:id/test",
+    requireAuth,
+    validateParams(idParamSchema),
+    async (req, res) => {
+      try {
+        const webhook = await storage.getWebhook(req.params.id);
+        if (!webhook) {
+          return res.status(404).json({ error: "Webhook not found" });
+        }
+
+        const { webhookService } = await import("./services/webhook-service");
+        const result = await webhookService.testWebhook(
+          webhook.url,
+          req.body.integrationType
+        );
+
+        res.json(result);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Webhook receiver endpoint (called by external services)
+  app.post("/api/webhooks/receive/:integrationId",
+    async (req, res) => {
+      try {
+        const { integrationId } = req.params;
+        const signature = req.headers["x-webhook-signature"] as string;
+
+        // Get webhook config from database
+        const webhooks = await storage.getWebhooks();
+        const webhook = webhooks.find(w => w.integrationId === integrationId);
+
+        if (!webhook) {
+          return res.status(404).json({ error: "Webhook not found" });
+        }
+
+        const { webhookService } = await import("./services/webhook-service");
+        const result = await webhookService.processWebhook(
+          {
+            integrationId,
+            integrationType: req.body.integrationType,
+            event: req.body.event || "unknown",
+            data: req.body,
+            timestamp: new Date(),
+            signature,
+          },
+          webhook
+        );
+
+        res.json(result);
+      } catch (error: any) {
+        console.error("Webhook receive error:", error);
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // ==================== DOCUMENT MANAGEMENT ROUTES ====================
+
+  // Get all documents
+  app.get("/api/documents",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const documents = await storage.getDocuments();
+        res.json(documents);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Upload document
+  app.post("/api/documents",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const document = await storage.createDocument({
+          ...req.body,
+          createdBy: req.user!.id,
+        });
+        res.status(201).json(document);
+      } catch (error: any) {
+        res.status(400).json({ error: error.message });
+      }
+    }
+  );
+
+  // Delete document
+  app.delete("/api/documents/:id",
+    requireAuth,
+    validateParams(idParamSchema),
+    async (req, res) => {
+      try {
+        await storage.deleteDocument(req.params.id);
+        res.json({ success: true });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Sync with OneDrive
+  app.post("/api/documents/sync/onedrive",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const { OneDriveConnector } = await import("./integrations/microsoft-connector");
+        const connector = new OneDriveConnector();
+
+        const result = await connector.syncFiles();
+        res.json(result);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
   const httpServer = createServer(app);
 
   return httpServer;
