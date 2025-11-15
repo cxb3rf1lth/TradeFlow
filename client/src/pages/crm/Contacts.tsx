@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Plus, Mail, Phone, Building2 } from "lucide-react";
 import { useState } from "react";
 import DataExport from "@/components/DataExport";
+import type { Contact } from "@/types/api";
 
 export default function Contacts() {
-  const { data: contacts, isLoading } = useQuery({
+  const { data: contacts = [], isLoading } = useQuery<Contact[]>({
     queryKey: ["/api/crm/contacts"],
   });
 

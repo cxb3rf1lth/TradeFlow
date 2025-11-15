@@ -2,9 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, DollarSign, Calendar } from "lucide-react";
+import type { Deal } from "@/types/api";
 
 export default function Deals() {
-  const { data: deals, isLoading } = useQuery({
+  const { data: deals = [], isLoading } = useQuery<Deal[]>({
     queryKey: ["/api/crm/deals"],
   });
 
