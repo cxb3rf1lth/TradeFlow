@@ -58,9 +58,7 @@ install_dependencies() {
         npm install --silent
         print_success "Dependencies installed successfully!"
     else
-        print_info "Dependencies already installed. Checking for updates..."
-        npm install --silent
-        print_success "Dependencies up to date!"
+        print_info "Dependencies already installed."
     fi
 }
 
