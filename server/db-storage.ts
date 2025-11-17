@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import { eq, desc, and, gte, lte } from "drizzle-orm";
-import * as schema from "./schema";
+import * as schema from "@shared/schema";
 import ws from "ws";
 import type {
   User, InsertUser,
@@ -42,7 +42,7 @@ import type {
   IntegrationCredential, InsertIntegrationCredential,
   IntegrationConfig, InsertIntegrationConfig,
   IntegrationLog, InsertIntegrationLog,
-} from "./schema";
+} from "@shared/schema";
 
 neonConfig.webSocketConstructor = ws;
 
