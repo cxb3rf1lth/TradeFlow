@@ -4,7 +4,7 @@
 
 set -e
 REPO="https://github.com/cxb3rf1lth/TradeFlow.git"
-BRANCH="claude/integrate-multi-app-features-011CUzgAwjXsFutQ1i3qj4JU"
+BRANCH="${BRANCH:-main}"  # Use main branch by default, or environment variable if set
 DIR="TradeFlow"
 
 # Colors

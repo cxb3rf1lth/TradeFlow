@@ -2,10 +2,20 @@
 
 ## 🚀 Ultra-Quick Install (Linux/Mac)
 
-Copy and paste this **single command** to install and run TradeFlow:
+### Option 1: Direct Clone & Launch (Recommended)
+
+Copy and paste this **single command** to clone, setup, and launch TradeFlow:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/cxb3rf1lth/TradeFlow/claude/integrate-multi-app-features-011CUzgAwjXsFutQ1i3qj4JU/install.sh)
+git clone https://github.com/cxb3rf1lth/TradeFlow.git && cd TradeFlow && chmod +x setup-and-launch.sh && ./setup-and-launch.sh
+```
+
+### Option 2: Remote Script Execution
+
+Alternatively, run the installer directly from GitHub:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/cxb3rf1lth/TradeFlow/main/install.sh)
 ```
 
 **That's it!** This one command will:
