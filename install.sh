@@ -58,7 +58,7 @@ check_prerequisites() {
 
     local errors=0
 
-    if ! command -v git &> /dev/null; then
+    if ! command -v git >/dev/null 2>&1; then
         print_error "git is not installed"
         print_info "Install from: https://git-scm.com"
         errors=$((errors + 1))
@@ -66,7 +66,7 @@ check_prerequisites() {
         print_success "git is installed"
     fi
 
-    if ! command -v node &> /dev/null; then
+    if ! command -v node >/dev/null 2>&1; then
         print_error "Node.js is not installed (v18+ required)"
         print_info "Install from: https://nodejs.org"
         errors=$((errors + 1))
@@ -75,7 +75,7 @@ check_prerequisites() {
         print_success "Node.js $NODE_VERSION is installed"
     fi
 
-    if ! command -v npm &> /dev/null; then
+    if ! command -v npm >/dev/null 2>&1; then
         print_error "npm is not installed"
         errors=$((errors + 1))
     else
@@ -102,7 +102,7 @@ setup_repository() {
             if ! git diff-index --quiet HEAD -- 2>/dev/null; then
                 print_warning "Local changes detected"
                 print_info "Stashing local changes..."
-                git stash push -m "Auto-stash before update $(date +%Y-%m-%d_%H:%M:%S)" || {
+                git stash push -m "Auto-stash before update $(date -Iseconds)" || {
                     print_error "Failed to stash changes"
                     exit 1
                 }
@@ -185,12 +185,24 @@ EOF
     fi
 }
 
+# Check if DATABASE_URL is properly configured
+is_database_configured() {
+    # Check if DATABASE_URL exists and is not a placeholder
+    if [ -f ".env" ]; then
+        if grep -q "^DATABASE_URL=[^#]" .env 2>/dev/null; then
+            if ! grep -q "^DATABASE_URL=your_database_url_here" .env 2>/dev/null; then
+                return 0  # Database is configured
+            fi
+        fi
+    fi
+    return 1  # Database is not configured
+}
+
 # Setup database
 setup_database() {
     print_step "5/6" "Setting up database..."
 
-    # Check if DATABASE_URL is configured in .env (support various database URL formats)
-    if grep -q "^DATABASE_URL=[^#]" .env 2>/dev/null && ! grep -q "^DATABASE_URL=your_database_url_here" .env 2>/dev/null; then
+    if is_database_configured; then
         print_info "Database URL found, running migrations..."
         if npm run db:push; then
             print_success "Database setup complete"
