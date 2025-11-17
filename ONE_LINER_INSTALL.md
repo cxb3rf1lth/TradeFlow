@@ -137,8 +137,7 @@ If you can't use curl, clone manually:
 
 ```bash
 # Clone repository
-git clone -b claude/integrate-multi-app-features-011CUzgAwjXsFutQ1i3qj4JU \
-  https://github.com/cxb3rf1lth/TradeFlow.git
+git clone https://github.com/cxb3rf1lth/TradeFlow.git
 
 # Navigate and install
 cd TradeFlow && npm install
@@ -265,7 +264,7 @@ chmod +x install.sh
 **One command. Three minutes. Complete enterprise platform.**
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/cxb3rf1lth/TradeFlow/claude/integrate-multi-app-features-011CUzgAwjXsFutQ1i3qj4JU/install.sh)
+git clone https://github.com/cxb3rf1lth/TradeFlow.git && cd TradeFlow && chmod +x setup-and-launch.sh && ./setup-and-launch.sh
 ```
 
 **That's all you need!** 🚀
