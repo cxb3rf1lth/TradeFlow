@@ -97,14 +97,16 @@ setup_repository() {
         print_info "Directory exists, checking for updates..."
         cd "$TARGET_DIR"
         
-        # Check if there are local changes
-        if ! git diff-index --quiet HEAD -- 2>/dev/null; then
-            print_warning "Local changes detected"
-            print_info "Stashing local changes..."
-            git stash push -m "Auto-stash before update $(date +%Y-%m-%d_%H:%M:%S)" || {
-                print_error "Failed to stash changes"
-                exit 1
-            }
+        # Check if there are local changes (only if repo is initialized)
+        if git rev-parse --verify HEAD >/dev/null 2>&1; then
+            if ! git diff-index --quiet HEAD -- 2>/dev/null; then
+                print_warning "Local changes detected"
+                print_info "Stashing local changes..."
+                git stash push -m "Auto-stash before update $(date +%Y-%m-%d_%H:%M:%S)" || {
+                    print_error "Failed to stash changes"
+                    exit 1
+                }
+            fi
         fi
         
         print_info "Fetching latest changes..."
@@ -143,8 +145,7 @@ install_dependencies() {
     print_warning "This may take 2-3 minutes..."
     
     if npm install; then
-        PKG_COUNT=$(npm list --depth=0 2>/dev/null | grep -c "├\|└" || echo "many")
-        print_success "$PKG_COUNT packages installed"
+        print_success "Dependencies installed successfully"
     else
         print_error "Failed to install dependencies"
         exit 1
@@ -167,7 +168,8 @@ PORT=5000
 NODE_ENV=development
 
 # Optional: PostgreSQL Database URL
-# DATABASE_URL=postgresql://username:password@localhost:5432/tradeflow
+# DATABASE_URL=your_database_url_here
+# Example: postgresql://username:password@localhost:5432/tradeflow
 
 # Optional: Email service (Resend)
 # RESEND_API_KEY=your_resend_key_here
@@ -187,8 +189,8 @@ EOF
 setup_database() {
     print_step "5/6" "Setting up database..."
 
-    # Check if DATABASE_URL is configured in .env
-    if grep -q "^DATABASE_URL=postgresql://" .env 2>/dev/null; then
+    # Check if DATABASE_URL is configured in .env (support various database URL formats)
+    if grep -q "^DATABASE_URL=[^#]" .env 2>/dev/null && ! grep -q "^DATABASE_URL=your_database_url_here" .env 2>/dev/null; then
         print_info "Database URL found, running migrations..."
         if npm run db:push; then
             print_success "Database setup complete"
@@ -199,7 +201,7 @@ setup_database() {
     else
         print_warning "DATABASE_URL not configured"
         print_info "Using in-memory storage (data won't persist)"
-        print_info "To use PostgreSQL, set DATABASE_URL in .env and run: npm run db:push"
+        print_info "To use a database, set DATABASE_URL in .env and run: npm run db:push"
     fi
 }
 
