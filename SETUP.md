@@ -17,34 +17,35 @@ node --version
 npm --version
 ```
 
-## Quick Start (Automated Setup)
+## 🚀 One-Line Install & Launch (Recommended)
 
-### Option 1: Download and Run Script
-
-1. Download the setup script:
-   ```bash
-   curl -O https://raw.githubusercontent.com/cxb3rf1lth/TradeFlow/copilot/perform-code-review-and-fix/setup-and-launch.sh
-   ```
-
-2. Make it executable:
-   ```bash
-   chmod +x setup-and-launch.sh
-   ```
-
-3. Run the script:
-   ```bash
-   ./setup-and-launch.sh
-   ```
-
-### Option 2: One-Line Command
-
-Run this single command to download and execute the setup script:
+Clone, setup, and launch TradeFlow with a single command:
 
 ```bash
-curl -sL https://raw.githubusercontent.com/cxb3rf1lth/TradeFlow/copilot/perform-code-review-and-fix/setup-and-launch.sh | bash
+git clone https://github.com/cxb3rf1lth/TradeFlow.git && cd TradeFlow && chmod +x setup-and-launch.sh && ./setup-and-launch.sh
 ```
 
-### Option 3: Copy-Paste Script
+**That's it!** This command will:
+- ✅ Clone the repository
+- ✅ Install all dependencies
+- ✅ Set up environment configuration
+- ✅ Launch the app at http://localhost:5000
+
+---
+
+## Alternative Setup Methods
+
+### Option 1: Manual Clone and Setup
+
+If you already have the repository cloned:
+
+```bash
+cd TradeFlow
+chmod +x setup-and-launch.sh
+./setup-and-launch.sh
+```
+
+### Option 2: Copy-Paste Script
 
 Copy and paste this entire block into your terminal:
 

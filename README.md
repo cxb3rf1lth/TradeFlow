@@ -2,6 +2,24 @@
 
 A comprehensive team management platform for executives, featuring email management, notes, team communication, and integrations with OneDrive, HubSpot, Jira, Trello, and Microsoft Teams.
 
+## 🚀 One-Line Install & Launch
+
+Clone, setup, and launch TradeFlow with a single command:
+
+```bash
+git clone https://github.com/cxb3rf1lth/TradeFlow.git && cd TradeFlow && chmod +x setup-and-launch.sh && ./setup-and-launch.sh
+```
+
+**That's it!** This command will:
+- ✅ Clone the repository
+- ✅ Install all dependencies
+- ✅ Set up environment configuration
+- ✅ Launch the app at http://localhost:5000
+
+**Prerequisites:** Node.js (v18+) and Git must be installed.
+
+---
+
 ## Features
 
 - **Email Center**: Send and manage team emails with Resend API integration

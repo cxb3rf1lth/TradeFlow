@@ -2,6 +2,24 @@
 
 This guide provides scripts to quickly clone and launch the TradeFlow application.
 
+## 🚀 Single-Line Command (Fastest!)
+
+Clone, setup, and launch TradeFlow with just one command:
+
+```bash
+git clone https://github.com/cxb3rf1lth/TradeFlow.git && cd TradeFlow && chmod +x setup-and-launch.sh && ./setup-and-launch.sh
+```
+
+This single command will:
+- ✅ Clone the repository
+- ✅ Install all dependencies (npm install)
+- ✅ Create .env configuration file
+- ✅ Launch the development server
+
+**Open your browser to http://localhost:5000 when ready!**
+
+---
+
 ## Prerequisites
 
 Before running the setup scripts, ensure you have:
