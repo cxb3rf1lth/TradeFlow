@@ -60,7 +60,7 @@ delete_branch() {
     local branch=$1
     
     # Check if branch exists on remote
-    if ! git ls-remote --heads origin "$branch" | grep -q "$branch"; then
+    if ! git ls-remote --heads origin "$branch" | grep -q "refs/heads/$branch$"; then
         print_warning "Branch does not exist (may be already deleted): $branch"
         return
     fi
