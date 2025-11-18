@@ -21,7 +21,7 @@ export default function TeamLounge() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: { type: string; content: string; author: string }) => {
+    mutationFn: async (data: { type: string; content: string }) => {
       const res = await apiRequest("POST", "/api/team-lounge", data);
       return res.json();
     },
@@ -99,7 +99,6 @@ export default function TeamLounge() {
     createMutation.mutate({
       type,
       content: newNote,
-      author: "current-user",
     });
   };
 

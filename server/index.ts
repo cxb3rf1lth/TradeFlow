@@ -19,12 +19,34 @@ app.use(helmet({
   },
 }));
 
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "*")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const allowAllOrigins = allowedOrigins.length === 0 || allowedOrigins.includes("*");
+
 // CORS configuration
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGINS || '*');
+  const requestOrigin = req.headers.origin as string | undefined;
+
+  let originToAllow: string | undefined;
+
+  if (allowAllOrigins) {
+    originToAllow = requestOrigin;
+  } else if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    originToAllow = requestOrigin;
+  }
+
+  if (originToAllow) {
+    res.header('Access-Control-Allow-Origin', originToAllow);
+    res.header('Access-Control-Allow-Credentials', 'true');
+  } else if (allowAllOrigins) {
+    res.header('Access-Control-Allow-Origin', '*');
+  }
+
+  res.header('Vary', 'Origin');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
