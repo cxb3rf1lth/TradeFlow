@@ -1,19 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
+import { z, ZodError, ZodIssue } from 'zod';
+
+const formatIssues = (issues: ZodIssue[]) =>
+  issues.map((issue) => ({
+    field: issue.path.join('.'),
+    message: issue.message,
+  }));
 
 export const validateRequest = (schema: z.ZodSchema) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       req.body = await schema.parseAsync(req.body);
       next();
-    } catch (error) {
-      if (error instanceof z.ZodError) {
+    } catch (error: unknown) {
+      if (error instanceof ZodError) {
         return res.status(400).json({
           error: 'Validation failed',
-          details: error.errors.map(err => ({
-            field: err.path.join('.'),
-            message: err.message,
-          })),
+          details: formatIssues(error.errors),
         });
       }
       next(error);
@@ -26,14 +29,11 @@ export const validateQuery = (schema: z.ZodSchema) => {
     try {
       req.query = await schema.parseAsync(req.query);
       next();
-    } catch (error) {
-      if (error instanceof z.ZodError) {
+    } catch (error: unknown) {
+      if (error instanceof ZodError) {
         return res.status(400).json({
           error: 'Invalid query parameters',
-          details: error.errors.map(err => ({
-            field: err.path.join('.'),
-            message: err.message,
-          })),
+          details: formatIssues(error.errors),
         });
       }
       next(error);
@@ -46,14 +46,11 @@ export const validateParams = (schema: z.ZodSchema) => {
     try {
       req.params = await schema.parseAsync(req.params);
       next();
-    } catch (error) {
-      if (error instanceof z.ZodError) {
+    } catch (error: unknown) {
+      if (error instanceof ZodError) {
         return res.status(400).json({
           error: 'Invalid parameters',
-          details: error.errors.map(err => ({
-            field: err.path.join('.'),
-            message: err.message,
-          })),
+          details: formatIssues(error.errors),
         });
       }
       next(error);
