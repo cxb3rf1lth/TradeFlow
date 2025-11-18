@@ -23,8 +23,66 @@ import {
   idParamSchema,
 } from "@shared/validation";
 import { sendEmail, formatEmailBody } from "./email";
+import {
+  insertNoteSchema,
+  insertTeamLoungeNoteSchema,
+  type InsertNote,
+  type InsertTeamLoungeNote,
+} from "@shared/schema";
+import { sanitizeHtml, stripHtml } from "./utils/sanitize";
+
+const sanitizeNoteInput = (note: InsertNote): InsertNote => ({
+  ...note,
+  title: stripHtml(note.title).trim(),
+  content: sanitizeHtml(note.content),
+});
+
+const sanitizeNoteUpdate = (update: Partial<InsertNote>): Partial<InsertNote> => {
+  const sanitized: Partial<InsertNote> = {};
+
+  if (typeof update.title === "string") {
+    sanitized.title = stripHtml(update.title).trim();
+  }
+
+  if (typeof update.content === "string") {
+    sanitized.content = sanitizeHtml(update.content);
+  }
+
+  return sanitized;
+};
+
+const sanitizeTeamLoungeInput = (note: InsertTeamLoungeNote): InsertTeamLoungeNote => ({
+  ...note,
+  author: stripHtml(note.author).trim(),
+  type: stripHtml(note.type || "note").trim() || "note",
+  content: sanitizeHtml(note.content),
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
+
+  app.get("/api/system/health", async (_req, res) => {
+    let storageHealthy = true;
+
+    try {
+      await storage.getEmailLogs();
+    } catch (error) {
+      storageHealthy = false;
+    }
+
+    res.json({
+      status: storageHealthy ? "ok" : "degraded",
+      uptimeInSeconds: Math.round(process.uptime()),
+      timestamp: new Date().toISOString(),
+      environment: {
+        node: process.version,
+        region: process.env.AWS_REGION || null,
+        commit: process.env.VERCEL_GIT_COMMIT_SHA || process.env.RENDER_GIT_COMMIT || null,
+      },
+      services: {
+        storage: storageHealthy ? "ok" : "error",
+      },
+    });
+  });
 
   // ==================== AUTH ROUTES ====================
 
@@ -194,7 +252,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     requireAuth,
     async (req, res) => {
       try {
-        const note = await storage.createNote(req.body);
+        if (!req.user) {
+          return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        const parsed = insertNoteSchema.parse({
+          ...req.body,
+          createdBy: req.user.id,
+        });
+        const note = await storage.createNote(sanitizeNoteInput(parsed));
         res.status(201).json(note);
       } catch (error: any) {
         res.status(400).json({ error: error.message });
@@ -204,7 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/notes",
     requireAuth,
-    async (req, res) => {
+    async (_req, res) => {
       try {
         const notes = await storage.getNotes();
         res.json(notes);
@@ -214,12 +280,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
+  const updateNoteSchema = insertNoteSchema.partial();
+
   app.patch("/api/notes/:id",
     requireAuth,
     validateParams(idParamSchema),
     async (req, res) => {
       try {
-        const note = await storage.updateNote(req.params.id, req.body);
+        const parsed = updateNoteSchema.parse(req.body);
+        const note = await storage.updateNote(req.params.id, sanitizeNoteUpdate(parsed));
         if (!note) {
           return res.status(404).json({ error: "Note not found" });
         }
@@ -249,7 +318,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     requireAuth,
     async (req, res) => {
       try {
-        const note = await storage.createTeamLoungeNote(req.body);
+        if (!req.user) {
+          return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        const parsed = insertTeamLoungeNoteSchema.parse({
+          ...req.body,
+          author: req.user.username || req.user.id,
+        });
+        const note = await storage.createTeamLoungeNote(sanitizeTeamLoungeInput(parsed));
         res.status(201).json(note);
       } catch (error: any) {
         res.status(400).json({ error: error.message });
