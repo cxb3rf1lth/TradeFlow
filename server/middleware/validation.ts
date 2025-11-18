@@ -15,10 +15,9 @@ export const validateRequest = (schema: z.ZodSchema) => {
     } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         const zodError = error as z.ZodError;
-        const details = formatIssues(zodError.errors);
         return res.status(400).json({
           error: 'Validation failed',
-          details,
+          details: formatIssues(zodError.errors),
         });
       }
       next(error);
@@ -34,10 +33,9 @@ export const validateQuery = (schema: z.ZodSchema) => {
     } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         const zodError = error as z.ZodError;
-        const details = formatIssues(zodError.errors);
         return res.status(400).json({
           error: 'Invalid query parameters',
-          details,
+          details: formatIssues(zodError.errors),
         });
       }
       next(error);
@@ -53,10 +51,9 @@ export const validateParams = (schema: z.ZodSchema) => {
     } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         const zodError = error as z.ZodError;
-        const details = formatIssues(zodError.errors);
         return res.status(400).json({
           error: 'Invalid parameters',
-          details,
+          details: formatIssues(zodError.errors),
         });
       }
       next(error);

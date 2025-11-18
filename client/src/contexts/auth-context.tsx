@@ -67,6 +67,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       await handleAuthResponse(response);
       toast({ title: "Welcome back", description: "You are now signed in." });
+    } catch (error) {
+      console.error("Login failed", error);
+      toast({
+        title: "Unable to log in",
+        description: "Please check your credentials and try again.",
+        variant: "destructive",
+      });
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -81,6 +89,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       await handleAuthResponse(response);
       toast({ title: "Account created", description: "You are now signed in." });
+    } catch (error) {
+      console.error("Registration failed", error);
+      toast({
+        title: "Unable to create account",
+        description: "Please try again or use a different username.",
+        variant: "destructive",
+      });
+      throw error;
     } finally {
       setLoading(false);
     }

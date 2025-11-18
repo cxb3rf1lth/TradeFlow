@@ -14,11 +14,14 @@ export default function AIAssistant() {
 
   const sendMessage = useMutation({
     mutationFn: async (userMessage: string) => {
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
       const res = await authorizedFetch("/api/ai/chat", {
         method: "POST",
         body: JSON.stringify({
           message: userMessage,
-          userId: user?.id ?? "user-1",
+          userId: user.id,
         }),
       });
       return res.json();
