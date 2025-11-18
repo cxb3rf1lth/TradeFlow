@@ -7,12 +7,21 @@ prompt() {
   local default_value="${3:-}"
   local value
   if [[ -n "$default_value" ]]; then
-    read -r -p "$prompt_text [$default_value]: " value || true
+    if ! read -r -p "$prompt_text [$default_value]: " value; then
+      echo "Error: Failed to read input" >&2
+      exit 1
+    fi
     value="${value:-$default_value}"
   else
-    read -r -p "$prompt_text: " value || true
+    if ! read -r -p "$prompt_text: " value; then
+      echo "Error: Failed to read input" >&2
+      exit 1
+    fi
     while [[ -z "$value" ]]; do
-      read -r -p "Please provide a value for $var_name: " value || true
+      if ! read -r -p "Please provide a value for $var_name: " value; then
+        echo "Error: Failed to read input" >&2
+        exit 1
+      fi
     done
   fi
   printf -v "$var_name" '%s' "$value"
@@ -27,12 +36,18 @@ prompt FRONTEND_URL "Amplify or CloudFront frontend URL" "$FRONTEND_URL_DEFAULT"
 prompt AWS_REGION "AWS region" "$REGION_DEFAULT"
 prompt RESEND_KEY "Resend (or SES) API key" "re_********************************"
 
-read -r -p "JWT/Session secret (leave blank to auto-generate): " JWT_SECRET || true
+if ! read -r -p "JWT/Session secret (leave blank to auto-generate): " JWT_SECRET; then
+  echo "Error: Failed to read input" >&2
+  exit 1
+fi
 if [[ -z "$JWT_SECRET" ]]; then
   if command -v openssl >/dev/null 2>&1; then
     JWT_SECRET=$(openssl rand -hex 32)
-  else
+  elif [[ -r /dev/urandom ]]; then
     JWT_SECRET=$(head -c 32 /dev/urandom | hexdump -ve '1/1 "%02x"')
+  else
+    echo "Error: Unable to auto-generate secret. Please provide a secret manually." >&2
+    exit 1
   fi
   echo "Generated JWT secret: $JWT_SECRET"
 fi

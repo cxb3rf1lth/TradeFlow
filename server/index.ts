@@ -29,19 +29,14 @@ const allowAllOrigins = allowedOrigins.length === 0 || allowedOrigins.includes("
 app.use((req, res, next) => {
   const requestOrigin = req.headers.origin as string | undefined;
 
-  let originToAllow: string | undefined;
-
-  if (allowAllOrigins) {
-    originToAllow = requestOrigin;
-  } else if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
-    originToAllow = requestOrigin;
-  }
-
-  if (originToAllow) {
-    res.header('Access-Control-Allow-Origin', originToAllow);
+  if (allowAllOrigins && requestOrigin) {
+    // When allowing all origins, reflect the request origin for credentials support
+    res.header('Access-Control-Allow-Origin', requestOrigin);
     res.header('Access-Control-Allow-Credentials', 'true');
-  } else if (allowAllOrigins) {
-    res.header('Access-Control-Allow-Origin', '*');
+  } else if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    // Only allow specific origins from the allowlist
+    res.header('Access-Control-Allow-Origin', requestOrigin);
+    res.header('Access-Control-Allow-Credentials', 'true');
   }
 
   res.header('Vary', 'Origin');
