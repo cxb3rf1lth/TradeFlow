@@ -65,6 +65,15 @@ export default function EmailCenter() {
       return;
     }
 
+    if (!user?.id) {
+      toast({
+        title: "Authentication required",
+        description: "You must be logged in to send emails",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSending(true);
     
     try {
@@ -74,7 +83,7 @@ export default function EmailCenter() {
           to,
           subject,
           body,
-          sentBy: user?.id ?? "anonymous",
+          sentBy: user.id,
         }),
       }).then((res) => res.json());
 
@@ -106,7 +115,15 @@ export default function EmailCenter() {
       });
       return;
     }
-    saveDraftMutation.mutate({ to, subject, body, createdBy: user?.id ?? "anonymous" });
+    if (!user?.id) {
+      toast({
+        title: "Authentication required",
+        description: "You must be logged in to save drafts",
+        variant: "destructive",
+      });
+      return;
+    }
+    saveDraftMutation.mutate({ to, subject, body, createdBy: user.id });
   };
 
   const templates = [

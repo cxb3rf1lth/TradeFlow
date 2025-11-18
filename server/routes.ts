@@ -42,7 +42,7 @@ const sanitizeNoteInput = (note: InsertNote): InsertNote => ({
 });
 
 const sanitizeNoteUpdate = (update: Partial<InsertNote>): Partial<InsertNote> => {
-  const sanitized: Partial<InsertNote> = {};
+  const sanitized: Partial<InsertNote> = { ...update };
 
   if (typeof update.title === "string") {
     sanitized.title = stripHtml(update.title).trim();
@@ -70,6 +70,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       await storage.getEmailLogs();
     } catch (error) {
+      console.error("Storage health check failed:", error);
       storageHealthy = false;
     }
 
@@ -799,8 +800,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: "List not found" });
         }
         const board = await storage.getBoard(existing.boardId);
-        if (!board || board.ownerId !== req.user!.id) {
-          return res.status(board ? 403 : 404).json({ error: board ? "Forbidden" : "Board not found" });
+        if (!board) {
+          return res.status(404).json({ error: "Board not found" });
+        }
+        if (board.ownerId !== req.user!.id) {
+          return res.status(403).json({ error: "Forbidden" });
         }
         const list = await storage.updateBoardList(req.params.id, req.body);
         res.json(list);
@@ -820,8 +824,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: "List not found" });
         }
         const board = await storage.getBoard(existing.boardId);
-        if (!board || board.ownerId !== req.user!.id) {
-          return res.status(board ? 403 : 404).json({ error: board ? "Forbidden" : "Board not found" });
+        if (!board) {
+          return res.status(404).json({ error: "Board not found" });
+        }
+        if (board.ownerId !== req.user!.id) {
+          return res.status(403).json({ error: "Forbidden" });
         }
         await storage.deleteBoardList(req.params.id);
         res.json({ success: true });
@@ -842,8 +849,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: "List not found" });
         }
         const board = await storage.getBoard(list.boardId);
-        if (!board || board.ownerId !== req.user!.id) {
-          return res.status(board ? 403 : 404).json({ error: board ? "Forbidden" : "Board not found" });
+        if (!board) {
+          return res.status(404).json({ error: "Board not found" });
+        }
+        if (board.ownerId !== req.user!.id) {
+          return res.status(403).json({ error: "Forbidden" });
         }
         const cards = await storage.getCards(req.params.listId);
         res.json(cards);
@@ -864,8 +874,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: "List not found" });
         }
         const board = await storage.getBoard(list.boardId);
-        if (!board || board.ownerId !== req.user!.id) {
-          return res.status(board ? 403 : 404).json({ error: board ? "Forbidden" : "Board not found" });
+        if (!board) {
+          return res.status(404).json({ error: "Board not found" });
+        }
+        if (board.ownerId !== req.user!.id) {
+          return res.status(403).json({ error: "Forbidden" });
         }
         const card = await storage.createCard({
           ...req.body,
@@ -890,8 +903,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: "Card not found" });
         }
         const board = await storage.getBoard(existing.boardId);
-        if (!board || board.ownerId !== req.user!.id) {
-          return res.status(board ? 403 : 404).json({ error: board ? "Forbidden" : "Board not found" });
+        if (!board) {
+          return res.status(404).json({ error: "Board not found" });
+        }
+        if (board.ownerId !== req.user!.id) {
+          return res.status(403).json({ error: "Forbidden" });
         }
         const card = await storage.updateCard(req.params.id, req.body);
         res.json(card);
@@ -911,8 +927,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: "Card not found" });
         }
         const board = await storage.getBoard(existing.boardId);
-        if (!board || board.ownerId !== req.user!.id) {
-          return res.status(board ? 403 : 404).json({ error: board ? "Forbidden" : "Board not found" });
+        if (!board) {
+          return res.status(404).json({ error: "Board not found" });
+        }
+        if (board.ownerId !== req.user!.id) {
+          return res.status(403).json({ error: "Forbidden" });
         }
         await storage.deleteCard(req.params.id);
         res.json({ success: true });

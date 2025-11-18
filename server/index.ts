@@ -29,19 +29,17 @@ const allowAllOrigins = allowedOrigins.length === 0 || allowedOrigins.includes("
 app.use((req, res, next) => {
   const requestOrigin = req.headers.origin as string | undefined;
 
-  let originToAllow: string | undefined;
-
-  if (allowAllOrigins) {
-    originToAllow = requestOrigin;
-  } else if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
-    originToAllow = requestOrigin;
-  }
-
-  if (originToAllow) {
-    res.header('Access-Control-Allow-Origin', originToAllow);
+  if (allowAllOrigins && requestOrigin) {
+    // When allowing all origins with credentials, reflect the requesting origin
+    res.header('Access-Control-Allow-Origin', requestOrigin);
     res.header('Access-Control-Allow-Credentials', 'true');
   } else if (allowAllOrigins) {
+    // No credentials when using wildcard
     res.header('Access-Control-Allow-Origin', '*');
+  } else if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    // Specific origin from allowed list
+    res.header('Access-Control-Allow-Origin', requestOrigin);
+    res.header('Access-Control-Allow-Credentials', 'true');
   }
 
   res.header('Vary', 'Origin');

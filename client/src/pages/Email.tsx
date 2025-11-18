@@ -94,7 +94,17 @@ export default function Email() {
                 className="bg-zinc-800 border-zinc-700 text-white min-h-[200px]"
               />
               <Button
-                onClick={() => sendEmailMutation.mutate({ to, subject, body, sentBy: user?.id ?? "user" })}
+                onClick={() => {
+                  if (!user?.id) {
+                    toast({ 
+                      title: "Authentication required",
+                      description: "You must be logged in to send emails",
+                      variant: "destructive" 
+                    });
+                    return;
+                  }
+                  sendEmailMutation.mutate({ to, subject, body, sentBy: user.id });
+                }}
                 disabled={!to || !subject || !body || sendEmailMutation.isPending}
                 className="w-full bg-yellow-600 hover:bg-yellow-700 text-black"
               >

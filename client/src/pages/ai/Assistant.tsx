@@ -14,11 +14,14 @@ export default function AIAssistant() {
 
   const sendMessage = useMutation({
     mutationFn: async (userMessage: string) => {
+      if (!user?.id) {
+        throw new Error("You must be logged in to use the AI assistant");
+      }
       const res = await authorizedFetch("/api/ai/chat", {
         method: "POST",
         body: JSON.stringify({
           message: userMessage,
-          userId: user?.id ?? "user-1",
+          userId: user.id,
         }),
       });
       return res.json();
