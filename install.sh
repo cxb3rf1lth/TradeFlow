@@ -3,7 +3,7 @@
 # TradeFlow Enterprise - Auto Installer
 # Handles both fresh installs and updates
 
-set -e  # Exit on error
+set -euo pipefail  # Exit on error, treat undefined variables as errors, and fail on pipeline errors
 
 # Colors for output
 BOLD='\033[1m'
@@ -14,9 +14,17 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Repository configuration
-REPO_URL="https://github.com/cxb3rf1lth/TradeFlow.git"
+DEFAULT_REPO_URL="https://github.com/cxb3rf1lth/TradeFlow.git"
+REPO_URL="${1:-$DEFAULT_REPO_URL}"
 TARGET_DIR="TradeFlow"
 DEFAULT_BRANCH="main"
+
+# Usage/help message
+if [[ "$#" -gt 0 ]] && [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    echo -e "${BOLD}Usage:${NC} $0 [REPO_URL]"
+    echo "If REPO_URL is not provided, defaults to $DEFAULT_REPO_URL"
+    exit 0
+fi
 
 # Function to print section headers
 print_header() {
@@ -24,6 +32,7 @@ print_header() {
     echo -e "${BOLD}╔════════════════════════════════════════════════╗${NC}"
     echo -e "${BOLD}║     TradeFlow Enterprise - Auto Installer     ║${NC}"
     echo -e "${BOLD}╚════════════════════════════════════════════════╝${NC}"
+    echo -e "${BOLD}Repository:${NC} $REPO_URL"
     echo ""
 }
 
@@ -66,6 +75,12 @@ check_prerequisites() {
     if ! command -v node &> /dev/null; then
         print_error "Node.js is not installed (v18+ required)"
         errors=$((errors + 1))
+    else
+        NODE_MAJOR_VERSION=$(node -v | cut -d. -f1 | sed 's/v//')
+        if [ "$NODE_MAJOR_VERSION" -lt 18 ]; then
+            print_error "Node.js v18 or higher is required (found v${NODE_MAJOR_VERSION})"
+            errors=$((errors + 1))
+        fi
     fi
 
     if ! command -v npm &> /dev/null; then
@@ -101,10 +116,16 @@ setup_repository() {
         git fetch origin
 
         # Try to checkout the default branch
-        git checkout "$DEFAULT_BRANCH" 2>/dev/null || true
+        if ! git checkout "$DEFAULT_BRANCH"; then
+            print_error "Failed to checkout branch '$DEFAULT_BRANCH'. Please check that the branch exists and you have the correct permissions."
+            exit 1
+        fi
 
         # Pull latest changes
-        git pull origin "$DEFAULT_BRANCH" --rebase 2>/dev/null || true
+        if ! git pull origin "$DEFAULT_BRANCH" --rebase; then
+            print_error "Failed to pull latest changes from '$DEFAULT_BRANCH'. Please check your network connection and permissions."
+            exit 1
+        fi
 
     else
         # Fresh clone
@@ -121,10 +142,10 @@ install_dependencies() {
     print_step "3/6" "Installing dependencies (this takes 2-3 minutes)..."
 
     # Install with npm
-    npm install --silent 2>&1 | grep -v "deprecated" || true
+    npm install --silent 2>&1 || true
 
     # Count installed packages
-    PACKAGE_COUNT=$(npm list --depth=0 2>/dev/null | grep -c "├─\|└─" || echo "0")
+    PACKAGE_COUNT=$(npm list --depth=0 --json 2>/dev/null | jq '.dependencies | length' 2>/dev/null || echo "0")
     print_success "$PACKAGE_COUNT packages installed"
 }
 
@@ -135,9 +156,13 @@ setup_environment() {
     if [ -f ".env" ]; then
         print_success ".env already exists"
     else
-        cat > .env << 'EOF'
-# Database (optional - uses in-memory storage if not set)
-# For production, uncomment and set to your PostgreSQL connection string:
+        if [ -f ".env.example" ]; then
+            cp .env.example .env
+            print_success ".env created from .env.example"
+        else
+            cat > .env << 'EOF'
+# Database configuration is not currently supported; the application always uses in-memory storage.
+# (The following DATABASE_URL setting is reserved for future use.)
 # DATABASE_URL=postgresql://user:password@host:port/database
 
 # Optional API Keys
@@ -148,7 +173,8 @@ ANTHROPIC_API_KEY=
 PORT=5000
 NODE_ENV=development
 EOF
-        print_success ".env created with defaults"
+            print_success ".env created with defaults"
+        fi
     fi
 }
 
@@ -158,14 +184,16 @@ setup_database() {
 
     # Source the .env file to check for DATABASE_URL
     if [ -f ".env" ]; then
-        export $(grep -v '^#' .env | grep -v '^$' | xargs)
+        set -a
+        source .env
+        set +a
     fi
 
     # Check if DATABASE_URL is set and not empty
-    if [ -z "$DATABASE_URL" ] || [ "$DATABASE_URL" = "" ]; then
+    if [ -z "${DATABASE_URL:-}" ]; then
         print_warning "DATABASE_URL not set, skipping database setup"
-        print_info "App will use in-memory storage (data won't persist)"
-        print_info "To use PostgreSQL, set DATABASE_URL in .env and run: npm run db:push"
+        print_info "App currently only supports in-memory storage"
+        print_info "Database persistence is not yet implemented"
     else
         # Run database migrations
         npm run db:push
@@ -198,10 +226,9 @@ print_completion() {
     echo -e "  http://localhost:5000"
     echo ""
 
-    if [ -z "$DATABASE_URL" ] || [ "$DATABASE_URL" = "" ]; then
-        echo -e "${YELLOW}Note:${NC} Using in-memory storage. To persist data:"
-        echo -e "  1. Set DATABASE_URL in .env"
-        echo -e "  2. Run: npm run db:push"
+    if [ -z "${DATABASE_URL:-}" ]; then
+        echo -e "${YELLOW}Note:${NC} Application uses in-memory storage only."
+        echo -e "  Database persistence is not yet implemented."
         echo ""
     fi
 }
