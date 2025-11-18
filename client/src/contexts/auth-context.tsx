@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, useCallback } 
 import type { ReactNode } from "react";
 import { authorizedFetch } from "@/lib/api-client";
 import { getStoredToken, persistToken } from "@/lib/auth-storage";
-import { useToast } from "@/lib/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 type AuthUser = {
   id: string;
