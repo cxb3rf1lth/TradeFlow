@@ -7,6 +7,7 @@ import DOMPurify from 'isomorphic-dompurify';
 export function sanitizeHtml(input: string | null | undefined): string {
   if (!input) return '';
   return DOMPurify.sanitize(input, {
+    ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'u', 'strong', 'em', 'a', 'ul', 'ol', 'li'],
     ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
   });
 }
