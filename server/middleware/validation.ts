@@ -7,15 +7,18 @@ const formatIssues = (issues: z.ZodIssue[]) =>
     message: issue.message,
   }));
 
+const isZodError = (error: unknown): error is z.ZodError => {
+  return error instanceof z.ZodError;
+};
+
 export const validateRequest = (schema: z.ZodSchema) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       req.body = await schema.parseAsync(req.body);
       next();
     } catch (error: unknown) {
-      if (error instanceof z.ZodError) {
-        const zodError = error as z.ZodError;
-        const details = formatIssues(zodError.errors);
+      if (isZodError(error)) {
+        const details = formatIssues(error.errors);
         return res.status(400).json({
           error: 'Validation failed',
           details,
@@ -32,9 +35,8 @@ export const validateQuery = (schema: z.ZodSchema) => {
       req.query = await schema.parseAsync(req.query);
       next();
     } catch (error: unknown) {
-      if (error instanceof z.ZodError) {
-        const zodError = error as z.ZodError;
-        const details = formatIssues(zodError.errors);
+      if (isZodError(error)) {
+        const details = formatIssues(error.errors);
         return res.status(400).json({
           error: 'Invalid query parameters',
           details,
@@ -51,9 +53,8 @@ export const validateParams = (schema: z.ZodSchema) => {
       req.params = await schema.parseAsync(req.params);
       next();
     } catch (error: unknown) {
-      if (error instanceof z.ZodError) {
-        const zodError = error as z.ZodError;
-        const details = formatIssues(zodError.errors);
+      if (isZodError(error)) {
+        const details = formatIssues(error.errors);
         return res.status(400).json({
           error: 'Invalid parameters',
           details,
