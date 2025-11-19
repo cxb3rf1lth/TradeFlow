@@ -65,8 +65,6 @@ export default function EmailCenter() {
       return;
     }
 
-    setSending(true);
-    
     if (!user) {
       toast({
         title: "Authentication required",
@@ -75,6 +73,8 @@ export default function EmailCenter() {
       });
       return;
     }
+
+    setSending(true);
 
     try {
       await authorizedFetch("/api/email/send", {
