@@ -43,7 +43,7 @@ fi
 if [[ -z "$JWT_SECRET" ]]; then
   if command -v openssl >/dev/null 2>&1; then
     JWT_SECRET=$(openssl rand -hex 32)
-  elif [[ -r /dev/urandom ]]; then
+  elif [[ -e /dev/urandom ]]; then
     JWT_SECRET=$(head -c 32 /dev/urandom | hexdump -ve '1/1 "%02x"')
   else
     echo "Error: Unable to auto-generate secret. Please provide a secret manually." >&2
