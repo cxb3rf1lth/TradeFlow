@@ -13,6 +13,11 @@ export const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+export const changePasswordSchema = z.object({
+  oldPassword: z.string().min(1),
+  newPassword: z.string().min(8).max(100),
+});
+
 // Contact schemas
 export const insertContactSchema = z.object({
   firstName: z.string().min(1).max(100).trim(),
@@ -112,6 +117,7 @@ export const idParamSchema = z.object({
 // Export types
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type InsertContactInput = z.infer<typeof insertContactSchema>;
 export type UpdateContactInput = z.infer<typeof updateContactSchema>;
 export type InsertCompanyInput = z.infer<typeof insertCompanySchema>;

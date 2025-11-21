@@ -101,17 +101,17 @@ app.use((req, res, next) => {
   const server = await registerRoutes(app);
 
   // Global error handler
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  app.use((err: Error & { status?: number; statusCode?: number }, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
 
     // Don't leak error details in production
-    const message = process.env.NODE_ENV === 'production'
+    const message = process.env.NODE_ENV === 'production' && status === 500
       ? 'Internal Server Error'
       : err.message || "Internal Server Error";
 
     res.status(status).json({
       error: message,
-      ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+      ...(process.env.NODE_ENV !== 'production' && err.stack && { stack: err.stack })
     });
 
     console.error('Error:', err);

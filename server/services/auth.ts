@@ -68,8 +68,8 @@ export class AuthService {
     // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
 
-    // Update password (would need to add method to storage)
-    // await storage.updateUserPassword(userId, hashedPassword);
+    // Update password
+    await storage.updateUserPassword(userId, hashedPassword);
 
     return { success: true };
   }

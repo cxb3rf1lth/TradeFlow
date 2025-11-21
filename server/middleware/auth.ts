@@ -4,7 +4,11 @@ import passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt, StrategyOptions, VerifiedCallback } from 'passport-jwt';
 import { storage } from '../memory-storage';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('FATAL: JWT_SECRET environment variable is required but not set. Please configure it in your .env file.');
+}
 
 export interface AuthTokenPayload extends JwtPayload {
   id: string;

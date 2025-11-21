@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { z, ZodError, ZodIssue } from 'zod';
+import { z } from 'zod';
 
-const formatIssues = (issues: ZodIssue[]) =>
+const formatIssues = (issues: z.ZodIssue[]) =>
   issues.map((issue) => ({
     field: issue.path.join('.'),
     message: issue.message,
@@ -13,13 +13,13 @@ export const validateRequest = (schema: z.ZodSchema) => {
       req.body = await schema.parseAsync(req.body);
       next();
     } catch (error: unknown) {
-      if (error instanceof ZodError) {
+      if (error instanceof z.ZodError) {
         return res.status(400).json({
           error: 'Validation failed',
           details: formatIssues(error.errors),
         });
       }
-      next(error);
+      next(error as Error);
     }
   };
 };
@@ -30,13 +30,13 @@ export const validateQuery = (schema: z.ZodSchema) => {
       req.query = await schema.parseAsync(req.query);
       next();
     } catch (error: unknown) {
-      if (error instanceof ZodError) {
+      if (error instanceof z.ZodError) {
         return res.status(400).json({
           error: 'Invalid query parameters',
           details: formatIssues(error.errors),
         });
       }
-      next(error);
+      next(error as Error);
     }
   };
 };
@@ -47,13 +47,13 @@ export const validateParams = (schema: z.ZodSchema) => {
       req.params = await schema.parseAsync(req.params);
       next();
     } catch (error: unknown) {
-      if (error instanceof ZodError) {
+      if (error instanceof z.ZodError) {
         return res.status(400).json({
           error: 'Invalid parameters',
           details: formatIssues(error.errors),
         });
       }
-      next(error);
+      next(error as Error);
     }
   };
 };
