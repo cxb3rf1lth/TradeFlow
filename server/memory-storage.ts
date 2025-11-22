@@ -14,6 +14,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserPassword(userId: string, hashedPassword: string): Promise<void>;
   createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate>;
   getEmailTemplates(): Promise<EmailTemplate[]>;
   getEmailTemplate(id: string): Promise<EmailTemplate | undefined>;
@@ -80,14 +81,22 @@ export class MemoryStorage implements IStorage {
   async getUser(id: string) { return this.users.get(id); }
   async getUserByUsername(username: string) { return Array.from(this.users.values()).find(u => u.username === username); }
   async createUser(insertUser: InsertUser) {
-    const user: User = { 
-      id: generateId(), 
+    const user: User = {
+      id: generateId(),
       ...insertUser,
       role: insertUser.role || "executive",
       avatar: insertUser.avatar || null
     };
     this.users.set(user.id, user);
     return user;
+  }
+
+  async updateUserPassword(userId: string, hashedPassword: string) {
+    const user = this.users.get(userId);
+    if (user) {
+      user.password = hashedPassword;
+      this.users.set(userId, user);
+    }
   }
 
   async createEmailTemplate(insertTemplate: InsertEmailTemplate) {

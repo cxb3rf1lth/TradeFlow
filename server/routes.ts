@@ -9,6 +9,7 @@ import { authLimiter, emailLimiter, apiLimiter } from "./middleware/rateLimit";
 import {
   registerSchema,
   loginSchema,
+  changePasswordSchema,
   insertContactSchema,
   updateContactSchema,
   insertCompanySchema,
@@ -26,6 +27,7 @@ import { sendEmail, formatEmailBody } from "./email";
 import {
   insertNoteSchema,
   insertTeamLoungeNoteSchema,
+  insertEmailDraftSchema,
   type InsertNote,
   type InsertTeamLoungeNote,
 } from "@shared/schema";
@@ -120,6 +122,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
+  app.post("/api/auth/change-password",
+    requireAuth,
+    authLimiter,
+    validateRequest(changePasswordSchema),
+    async (req, res) => {
+      try {
+        const { oldPassword, newPassword } = req.body;
+        await authService.changePassword(req.user!.id, oldPassword, newPassword);
+        res.json({ success: true, message: 'Password changed successfully' });
+      } catch (error: any) {
+        res.status(400).json({ error: error.message });
+      }
+    }
+  );
+
   // ==================== EMAIL ROUTES ====================
 
   app.post("/api/email/send",
@@ -188,6 +205,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const template = await storage.createEmailTemplate({
           ...req.body,
+          subject: stripHtml(req.body.subject).trim(),
+          body: sanitizeHtml(req.body.body),
           createdBy: req.user!.id,
         });
         res.status(201).json(template);
@@ -211,9 +230,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/email/drafts",
     requireAuth,
+    validateRequest(insertEmailDraftSchema),
     async (req, res) => {
       try {
-        const draft = await storage.createEmailDraft(req.body);
+        const draft = await storage.createEmailDraft({
+          ...req.body,
+          subject: stripHtml(req.body.subject).trim(),
+          body: sanitizeHtml(req.body.body),
+          createdBy: req.user!.id,
+        });
         res.status(201).json(draft);
       } catch (error: any) {
         res.status(400).json({ error: error.message });
