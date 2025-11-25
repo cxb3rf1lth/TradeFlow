@@ -79,6 +79,23 @@ export const insertBoardSchema = z.object({
 
 export const updateBoardSchema = insertBoardSchema.partial();
 
+export const insertBoardListSchema = z.object({
+  name: z.string().min(1).max(100).trim(),
+  position: z.number().int().min(0).optional(),
+});
+
+export const updateBoardListSchema = insertBoardListSchema.partial();
+
+export const insertCardSchema = z.object({
+  title: z.string().min(1).max(200).trim(),
+  description: z.string().optional().nullable(),
+  position: z.number().int().min(0).optional(),
+  dueDate: z.string().optional().nullable(),
+  labels: z.array(z.string()).max(10).optional(),
+});
+
+export const updateCardSchema = insertCardSchema.partial();
+
 // Email schemas
 export const sendEmailSchema = z.object({
   to: z.string().email(),
@@ -120,5 +137,9 @@ export type InsertDealInput = z.infer<typeof insertDealSchema>;
 export type UpdateDealInput = z.infer<typeof updateDealSchema>;
 export type InsertBoardInput = z.infer<typeof insertBoardSchema>;
 export type UpdateBoardInput = z.infer<typeof updateBoardSchema>;
+export type InsertBoardListInput = z.infer<typeof insertBoardListSchema>;
+export type UpdateBoardListInput = z.infer<typeof updateBoardListSchema>;
+export type InsertCardInput = z.infer<typeof insertCardSchema>;
+export type UpdateCardInput = z.infer<typeof updateCardSchema>;
 export type SendEmailInput = z.infer<typeof sendEmailSchema>;
 export type PaginationParams = z.infer<typeof paginationSchema>;

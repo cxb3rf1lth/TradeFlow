@@ -12,9 +12,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Mail, Send, Clock, FileText, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { authorizedFetch } from "@/lib/api-client";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function EmailCenter() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -65,24 +68,15 @@ export default function EmailCenter() {
     setSending(true);
     
     try {
-      const response = await fetch('/api/email/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      await authorizedFetch("/api/email/send", {
+        method: "POST",
         body: JSON.stringify({
           to,
           subject,
           body,
-          sentBy: 'PA', // TODO: Get from current user
+          sentBy: user?.id ?? "anonymous",
         }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send email');
-      }
+      }).then((res) => res.json());
 
       toast({
         title: "Email sent!",
@@ -112,7 +106,7 @@ export default function EmailCenter() {
       });
       return;
     }
-    saveDraftMutation.mutate({ to, subject, body, createdBy: "current-user" });
+    saveDraftMutation.mutate({ to, subject, body, createdBy: user?.id ?? "anonymous" });
   };
 
   const templates = [

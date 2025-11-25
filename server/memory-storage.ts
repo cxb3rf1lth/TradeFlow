@@ -30,6 +30,7 @@ export interface IStorage {
   deleteNote(id: string): Promise<void>;
   createTeamLoungeNote(note: InsertTeamLoungeNote): Promise<TeamLoungeNote>;
   getTeamLoungeNotes(): Promise<TeamLoungeNote[]>;
+  getTeamLoungeNote(id: string): Promise<TeamLoungeNote | undefined>;
   togglePinTeamLoungeNote(id: string): Promise<TeamLoungeNote | undefined>;
   deleteTeamLoungeNote(id: string): Promise<void>;
   createContact(contact: InsertContact): Promise<Contact>;
@@ -55,10 +56,12 @@ export interface IStorage {
   deleteBoard(id: string): Promise<void>;
   createBoardList(list: any): Promise<any>;
   getBoardLists(boardId: string): Promise<any[]>;
+  getBoardList(id: string): Promise<any | undefined>;
   updateBoardList(id: string, list: any): Promise<any | undefined>;
   deleteBoardList(id: string): Promise<void>;
   createCard(card: any): Promise<any>;
   getCards(listId: string): Promise<any[]>;
+  getCard(id: string): Promise<any | undefined>;
   updateCard(id: string, card: any): Promise<any | undefined>;
   deleteCard(id: string): Promise<void>;
 }
@@ -147,7 +150,12 @@ export class MemoryStorage implements IStorage {
     this.teamLoungeNotes.set(note.id, note);
     return note;
   }
-  async getTeamLoungeNotes() { return Array.from(this.teamLoungeNotes.values()).sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)); }
+  async getTeamLoungeNotes() {
+    return Array.from(this.teamLoungeNotes.values()).sort(
+      (a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)
+    );
+  }
+  async getTeamLoungeNote(id: string) { return this.teamLoungeNotes.get(id); }
   async togglePinTeamLoungeNote(id: string) {
     const note = this.teamLoungeNotes.get(id);
     if (!note) return undefined;
@@ -278,6 +286,7 @@ export class MemoryStorage implements IStorage {
       .filter(list => list.boardId === boardId)
       .sort((a, b) => (a.position || 0) - (b.position || 0));
   }
+  async getBoardList(id: string) { return this.boardLists.get(id); }
   async updateBoardList(id: string, update: any) {
     const list = this.boardLists.get(id);
     if (!list) return undefined;
@@ -297,6 +306,7 @@ export class MemoryStorage implements IStorage {
       .filter(card => card.listId === listId)
       .sort((a, b) => (a.position || 0) - (b.position || 0));
   }
+  async getCard(id: string) { return this.cards.get(id); }
   async updateCard(id: string, update: any) {
     const card = this.cards.get(id);
     if (!card) return undefined;

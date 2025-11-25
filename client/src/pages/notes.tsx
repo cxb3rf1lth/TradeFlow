@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Note } from "@shared/schema";
 import { format } from "date-fns";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 export default function Notes() {
   const { toast } = useToast();
@@ -33,7 +34,7 @@ export default function Notes() {
 
   const createMutation = useMutation({
     mutationFn: async (data: { title: string; content: string }) => {
-      const res = await apiRequest("POST", "/api/notes", { ...data, createdBy: "current-user" });
+      const res = await apiRequest("POST", "/api/notes", data);
       return res.json();
     },
     onSuccess: () => {
@@ -304,9 +305,9 @@ export default function Notes() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div 
+                <div
                   className="prose prose-sm dark:prose-invert line-clamp-3"
-                  dangerouslySetInnerHTML={{ __html: note.content }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.content) }}
                 />
                 <p className="text-xs text-muted-foreground mt-3">
                   Updated {formatTimestamp(note.updatedAt)}

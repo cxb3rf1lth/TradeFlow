@@ -1,16 +1,11 @@
 import { QueryClient } from "@tanstack/react-query";
+import { authorizedFetch } from "./api-client";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: async ({ queryKey }) => {
-        const res = await fetch(queryKey[0] as string);
-        if (!res.ok) {
-          if (res.status >= 500) {
-            throw new Error(`${res.status}: ${res.statusText}`);
-          }
-          throw new Error(`${res.status}: ${await res.text()}`);
-        }
+        const res = await authorizedFetch(queryKey[0] as string);
         return res.json();
       },
       staleTime: 1000 * 60, // 1 minute
@@ -33,36 +28,24 @@ export async function apiRequest(
   let url: string;
   let data: any;
 
-  // Support both signatures:
-  // 1. apiRequest(method, url, data) - legacy
-  // 2. apiRequest(url, options) - new
-  if (typeof urlOrOptions === 'string') {
+  if (typeof urlOrOptions === "string") {
     method = methodOrUrl;
     url = urlOrOptions;
     data = dataOrUndefined;
   } else {
-    method = 'GET';
+    method = "GET";
     url = methodOrUrl;
     data = undefined;
   }
 
   const options: RequestInit = {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    ...((urlOrOptions && typeof urlOrOptions !== "string") ? urlOrOptions : {}),
   };
 
   if (data) {
     options.body = JSON.stringify(data);
   }
 
-  const res = await fetch(url, options);
-
-  if (!res.ok) {
-    const error = await res.text();
-    throw new Error(error || `HTTP ${res.status}: ${res.statusText}`);
-  }
-
-  return res;
+  return authorizedFetch(url, options);
 }

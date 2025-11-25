@@ -1,6 +1,8 @@
 import { Client } from "@microsoft/microsoft-graph-client";
 import "isomorphic-fetch";
 
+type GraphUploadBody = Blob | ArrayBuffer | ArrayBufferView | string;
+
 export interface GraphAuthProvider {
   getAccessToken(): Promise<string>;
 }
@@ -60,7 +62,7 @@ export class MicrosoftGraphService {
     }
   }
 
-  async uploadFile(parentId: string, fileName: string, file: Buffer | string) {
+  async uploadFile(parentId: string, fileName: string, file: GraphUploadBody) {
     try {
       return await this.client
         .api(`/me/drive/items/${parentId}:/${fileName}:/content`)

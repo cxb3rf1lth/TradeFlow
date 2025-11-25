@@ -15,6 +15,7 @@ import {
   Settings,
 } from "lucide-react";
 import GlobalSearch from "../GlobalSearch";
+import { useAuth } from "@/contexts/auth-context";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -48,6 +49,7 @@ const navigation = [
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const [location] = useLocation();
+  const { user, logout } = useAuth();
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -109,14 +111,24 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </nav>
 
         <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-              <span className="text-sm font-medium text-blue-700">U</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium text-blue-700">
+                  {user?.name?.[0]?.toUpperCase() || user?.username?.[0]?.toUpperCase() || "U"}
+                </span>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-700">{user?.name || user?.username}</p>
+                <p className="text-xs text-gray-500 capitalize">{user?.role || "member"}</p>
+              </div>
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-700">User</p>
-              <p className="text-xs text-gray-500">Executive</p>
-            </div>
+            <button
+              onClick={logout}
+              className="text-xs font-medium text-blue-600 hover:text-blue-500"
+            >
+              Sign out
+            </button>
           </div>
         </div>
       </aside>
