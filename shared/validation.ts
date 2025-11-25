@@ -89,7 +89,17 @@ export const sendEmailSchema = z.object({
   to: z.string().email(),
   subject: z.string().min(1).max(200),
   body: z.string().min(1),
-  sentBy: z.string(),
+  attachments: z
+    .array(
+      z.object({
+        name: z.string(),
+        size: z.number().int().nonnegative(),
+        type: z.string().optional(),
+        url: z.string().url().optional(),
+      })
+    )
+    .optional()
+    .default([]),
 });
 
 export const insertEmailTemplateSchema = z.object({

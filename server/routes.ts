@@ -23,7 +23,7 @@ import {
   paginationSchema,
   idParamSchema,
 } from "@shared/validation";
-import { sendEmail, formatEmailBody } from "./email";
+import { formatEmailBody } from "./email";
 import {
   insertNoteSchema,
   insertTeamLoungeNoteSchema,
@@ -32,6 +32,7 @@ import {
   type InsertTeamLoungeNote,
 } from "@shared/schema";
 import { sanitizeHtml, stripHtml } from "./utils/sanitize";
+import { MailService } from "./services/mail-service";
 
 const sanitizeNoteInput = (note: InsertNote): InsertNote => ({
   ...note,
@@ -61,6 +62,8 @@ const sanitizeTeamLoungeInput = (note: InsertTeamLoungeNote): InsertTeamLoungeNo
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+
+  const mailService = new MailService(storage);
 
   app.get("/api/system/health", async (_req, res) => {
     let storageHealthy = true;
@@ -143,46 +146,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     requireAuth,
     emailLimiter,
     validateRequest(sendEmailSchema),
-    async (req, res, next) => {
-      try {
-        const { to, subject, body } = req.body;
+    async (req, res) => {
+      const { to, subject, body, attachments = [] } = req.body;
 
-        // Format and sanitize email body
-        const htmlBody = formatEmailBody(body);
+      const htmlBody = formatEmailBody(body);
 
-        // Send email
-        const result = await sendEmail({
-          to,
-          subject,
-          html: htmlBody,
-        });
+      const emailLog = await mailService.sendMessage({
+        to,
+        subject,
+        body: htmlBody,
+        attachments,
+        user: req.user!,
+      });
 
-        if (!result.success) {
-          throw new Error(result.error || "Failed to send email");
-        }
-
-        // Log the email
-        const emailLog = await storage.createEmailLog({
-          to,
-          subject,
-          body,
-          sentBy: req.user!.id,
-          status: "sent",
-        });
-
-        res.json({ success: true, emailLog });
-      } catch (error: any) {
-        // Log failed email attempt
-        await storage.createEmailLog({
-          to: req.body.to,
-          subject: req.body.subject,
-          body: req.body.body,
-          sentBy: req.user!.id,
-          status: "failed",
-        });
-
-        res.status(500).json({ error: error.message });
-      }
+      const success = emailLog.state !== "failed";
+      res.status(success ? 200 : 500).json({ success, emailLog });
     }
   );
 
@@ -195,6 +173,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error: any) {
         res.status(500).json({ error: error.message });
       }
+    }
+  );
+
+  app.post("/api/email/sync",
+    requireAuth,
+    emailLimiter,
+    async (req, res) => {
+      const result = await mailService.syncInbox(req.user!);
+      res.json(result);
     }
   );
 

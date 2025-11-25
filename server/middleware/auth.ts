@@ -22,6 +22,8 @@ declare global {
       id: string;
       username: string;
       role: string;
+      name?: string;
+      avatar?: string | null;
     }
   }
 }
@@ -41,6 +43,8 @@ passport.use(
           id: user.id,
           username: user.username,
           role: user.role,
+          name: user.name,
+          avatar: user.avatar,
         });
       }
       return done(null, false);

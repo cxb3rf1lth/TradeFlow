@@ -82,6 +82,23 @@ export class MicrosoftGraphService {
     }
   }
 
+  // ========== Outlook Mail ==========
+
+  async listMessages(limit: number = 10) {
+    try {
+      const response = await this.client
+        .api("/me/messages")
+        .top(limit)
+        .select("subject,from,bodyPreview,receivedDateTime,hasAttachments")
+        .orderby("receivedDateTime DESC")
+        .get();
+      return response.value;
+    } catch (error) {
+      console.error("Error listing messages:", error);
+      throw error;
+    }
+  }
+
   async shareFile(itemId: string, type: "view" | "edit" = "view") {
     try {
       const permission = {
