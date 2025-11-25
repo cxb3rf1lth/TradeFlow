@@ -11,39 +11,36 @@ import OneDrive from "./pages/microsoft365/OneDrive";
 import Calendar from "./pages/microsoft365/Calendar";
 import Teams from "./pages/microsoft365/Teams";
 import AppLayout from "./components/layout/AppLayout";
+import { AuthProvider } from "@/contexts/auth-context";
+import AuthPage from "@/pages/auth/AuthPage";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 export default function App() {
   return (
-    <>
-      <AppLayout>
-        <Switch>
-          <Route path="/" component={Dashboard} />
-
-          {/* CRM Routes */}
-          <Route path="/crm/contacts" component={Contacts} />
-          <Route path="/crm/companies" component={Companies} />
-          <Route path="/crm/deals" component={Deals} />
-
-          {/* Analytics */}
-          <Route path="/analytics" component={Analytics} />
-
-          {/* Project Management Routes */}
-          <Route path="/projects" component={Boards} />
-
-          {/* Microsoft 365 Routes */}
-          <Route path="/onedrive" component={OneDrive} />
-          <Route path="/calendar" component={Calendar} />
-          <Route path="/teams" component={Teams} />
-
-          {/* AI Assistant */}
-          <Route path="/ai" component={AIAssistant} />
-
-          {/* Fallback */}
-          <Route>404 - Page Not Found</Route>
-        </Switch>
-      </AppLayout>
-
+    <AuthProvider>
+      <Switch>
+        <Route path="/login" component={AuthPage} />
+        <Route>
+          <ProtectedRoute>
+            <AppLayout>
+              <Switch>
+                <Route path="/" component={Dashboard} />
+                <Route path="/crm/contacts" component={Contacts} />
+                <Route path="/crm/companies" component={Companies} />
+                <Route path="/crm/deals" component={Deals} />
+                <Route path="/analytics" component={Analytics} />
+                <Route path="/projects" component={Boards} />
+                <Route path="/onedrive" component={OneDrive} />
+                <Route path="/calendar" component={Calendar} />
+                <Route path="/teams" component={Teams} />
+                <Route path="/ai" component={AIAssistant} />
+                <Route>404 - Page Not Found</Route>
+              </Switch>
+            </AppLayout>
+          </ProtectedRoute>
+        </Route>
+      </Switch>
       <Toaster />
-    </>
+    </AuthProvider>
   );
 }

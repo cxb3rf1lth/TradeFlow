@@ -1,10 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import passport from 'passport';
-import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
+import { Strategy as JwtStrategy, ExtractJwt, StrategyOptions, VerifiedCallback } from 'passport-jwt';
 import { storage } from '../memory-storage';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
+export interface AuthTokenPayload extends JwtPayload {
+  id: string;
+  role: string;
+}
 
 // Extend Express Request type
 declare global {
@@ -18,13 +23,13 @@ declare global {
 }
 
 // Configure passport JWT strategy
-const jwtOptions = {
+const jwtOptions: StrategyOptions = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
   secretOrKey: JWT_SECRET,
 };
 
 passport.use(
-  new JwtStrategy(jwtOptions, async (payload, done) => {
+  new JwtStrategy(jwtOptions, async (payload: AuthTokenPayload, done: VerifiedCallback) => {
     try {
       const user = await storage.getUser(payload.id);
       if (user) {
@@ -65,9 +70,9 @@ export const generateToken = (userId: string, role: string): string => {
 };
 
 // Verify JWT token
-export const verifyToken = (token: string): any => {
+export const verifyToken = (token: string): AuthTokenPayload | null => {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    return jwt.verify(token, JWT_SECRET) as AuthTokenPayload;
   } catch (error) {
     return null;
   }

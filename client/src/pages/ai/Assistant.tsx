@@ -4,22 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Bot, Send } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
+import { authorizedFetch } from "@/lib/api-client";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function AIAssistant() {
   const [message, setMessage] = useState("");
   const [conversation, setConversation] = useState<Array<{role: string, content: string}>>([]);
+  const { user } = useAuth();
 
   const sendMessage = useMutation({
     mutationFn: async (userMessage: string) => {
-      const res = await fetch("/api/ai/chat", {
+      const res = await authorizedFetch("/api/ai/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMessage,
-          userId: "user-1", // TODO: Get from auth
+          userId: user?.id ?? "user-1",
         }),
       });
-      if (!res.ok) throw new Error("Failed to send message");
       return res.json();
     },
     onSuccess: (data) => {

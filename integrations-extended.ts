@@ -1,5 +1,17 @@
 import axios, { AxiosInstance } from "axios";
 
+type BinaryFileInput = Blob | ArrayBuffer | ArrayBufferView | string;
+
+const toBlob = (payload: BinaryFileInput, mimeType?: string): Blob => {
+  if (payload instanceof Blob) {
+    if (!mimeType || !mimeType.length || payload.type === mimeType) {
+      return payload;
+    }
+    return payload.slice(0, payload.size, mimeType);
+  }
+  return new Blob([payload], mimeType ? { type: mimeType } : undefined);
+};
+
 // ========== Slack Integration ==========
 
 export class SlackConnector {
@@ -94,11 +106,16 @@ export class SlackConnector {
   }
 
   // Files
-  async uploadFile(channels: string, file: Buffer, filename: string, title?: string) {
+  async uploadFile(
+    channels: string,
+    file: BinaryFileInput,
+    filename: string,
+    title?: string
+  ) {
     try {
       const formData = new FormData();
       formData.append("channels", channels);
-      formData.append("file", new Blob([file]), filename);
+      formData.append("file", toBlob(file), filename);
       if (title) formData.append("title", title);
 
       const response = await this.client.post("/files.upload", formData);
@@ -195,12 +212,12 @@ export class GoogleWorkspaceConnector {
     }
   }
 
-  async uploadDriveFile(name: string, mimeType: string, content: Buffer) {
+  async uploadDriveFile(name: string, mimeType: string, content: BinaryFileInput) {
     try {
       const metadata = { name, mimeType };
       const formData = new FormData();
       formData.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-      formData.append("file", new Blob([content], { type: mimeType }));
+      formData.append("file", toBlob(content, mimeType));
 
       const response = await this.client.post(
         "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",

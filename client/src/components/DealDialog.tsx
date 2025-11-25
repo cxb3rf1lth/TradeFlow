@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/lib/use-toast";
+import { authorizedJson } from "@/lib/api-client";
 
 interface DealDialogProps {
   open: boolean;
@@ -26,13 +27,10 @@ export function DealDialog({ open, onOpenChange, deal }: DealDialogProps) {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch("/api/deals", {
+      return authorizedJson("/api/deals", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!response.ok) throw new Error("Failed to create deal");
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/deals"] });

@@ -6,6 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { useToast } from "../components/ui/use-toast";
+import { authorizedFetch } from "@/lib/api-client";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function Email() {
   const [to, setTo] = useState("");
@@ -15,10 +17,12 @@ export default function Email() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const { user } = useAuth();
+
   const { data: emailLogs } = useQuery({
     queryKey: ["/api/email/logs"],
     queryFn: async () => {
-      const res = await fetch("/api/email/logs");
+      const res = await authorizedFetch("/api/email/logs");
       return res.json();
     }
   });
@@ -26,19 +30,17 @@ export default function Email() {
   const { data: templates } = useQuery({
     queryKey: ["/api/email/templates"],
     queryFn: async () => {
-      const res = await fetch("/api/email/templates");
+      const res = await authorizedFetch("/api/email/templates");
       return res.json();
     }
   });
 
   const sendEmailMutation = useMutation({
     mutationFn: async (email: any) => {
-      const res = await fetch("/api/email/send", {
+      const res = await authorizedFetch("/api/email/send", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(email),
       });
-      if (!res.ok) throw new Error("Failed to send email");
       return res.json();
     },
     onSuccess: () => {
@@ -92,7 +94,7 @@ export default function Email() {
                 className="bg-zinc-800 border-zinc-700 text-white min-h-[200px]"
               />
               <Button
-                onClick={() => sendEmailMutation.mutate({ to, subject, body, sentBy: "user" })}
+                onClick={() => sendEmailMutation.mutate({ to, subject, body, sentBy: user?.id ?? "user" })}
                 disabled={!to || !subject || !body || sendEmailMutation.isPending}
                 className="w-full bg-yellow-600 hover:bg-yellow-700 text-black"
               >

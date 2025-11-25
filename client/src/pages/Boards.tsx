@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { useToast } from "../components/ui/use-toast";
+import { authorizedFetch } from "@/lib/api-client";
 
 export default function Boards() {
   const [newBoardName, setNewBoardName] = useState("");
@@ -17,16 +18,15 @@ export default function Boards() {
   const { data: boards, isLoading } = useQuery({
     queryKey: ["/api/boards"],
     queryFn: async () => {
-      const res = await fetch("/api/boards");
+      const res = await authorizedFetch("/api/boards");
       return res.json();
     }
   });
 
   const createBoardMutation = useMutation({
     mutationFn: async (board: any) => {
-      const res = await fetch("/api/boards", {
+      const res = await authorizedFetch("/api/boards", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(board),
       });
       return res.json();
@@ -42,7 +42,7 @@ export default function Boards() {
 
   const deleteBoardMutation = useMutation({
     mutationFn: async (id: string) => {
-      await fetch(`/api/boards/${id}`, { method: "DELETE" });
+      await authorizedFetch(`/api/boards/${id}`, { method: "DELETE" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/boards"] });
