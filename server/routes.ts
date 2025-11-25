@@ -30,6 +30,7 @@ import { sendEmail, formatEmailBody } from "./email";
 import {
   insertNoteSchema,
   insertTeamLoungeNoteSchema,
+  insertEmailDraftSchema,
   type InsertNote,
   type InsertTeamLoungeNote,
 } from "@shared/schema";
@@ -222,7 +223,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     requireAuth,
     async (req, res) => {
       try {
-        const draft = await storage.createEmailDraft(req.body);
+        const draftData = insertEmailDraftSchema.parse({
+          ...req.body,
+          createdBy: req.user!.id,
+        });
+        const draft = await storage.createEmailDraft(draftData);
         res.status(201).json(draft);
       } catch (error: any) {
         res.status(400).json({ error: error.message });
