@@ -108,11 +108,17 @@ export class MemoryStorage implements IStorage {
   async getEmailTemplate(id: string) { return this.emailTemplates.get(id); }
 
   async createEmailLog(insertLog: InsertEmailLog) {
-    const log: EmailLog = { 
-      id: generateId(), 
-      ...insertLog, 
+    const log: EmailLog = {
+      id: generateId(),
+      ...insertLog,
+      from: insertLog.from || insertLog.sender?.email || "",
       status: insertLog.status || "sent",
-      sentAt: new Date() 
+      state: insertLog.state || insertLog.status || "sent",
+      direction: insertLog.direction || "outbound",
+      attachments: insertLog.attachments || [],
+      syncStatus: insertLog.syncStatus || "pending",
+      retryCount: insertLog.retryCount ?? 0,
+      sentAt: insertLog.sentAt || new Date()
     };
     this.emailLogs.set(log.id, log);
     return log;

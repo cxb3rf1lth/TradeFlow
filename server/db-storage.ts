@@ -475,7 +475,17 @@ export class DbStorage {
   }
 
   async createEmailLog(log: InsertEmailLog): Promise<EmailLog> {
-    const result = await this.db.insert(schema.emailLogs).values(log).returning();
+    const now = new Date();
+    const result = await this.db.insert(schema.emailLogs).values({
+      ...log,
+      from: log.from || log.sender?.email || null,
+      state: log.state || log.status || "sent",
+      direction: log.direction || "outbound",
+      attachments: log.attachments || [],
+      syncStatus: log.syncStatus || "pending",
+      retryCount: log.retryCount ?? 0,
+      sentAt: log.sentAt || now,
+    }).returning();
     return result[0];
   }
 

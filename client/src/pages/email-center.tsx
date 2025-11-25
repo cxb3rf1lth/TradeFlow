@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Send, Clock, FileText, Zap } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Mail, Send, Clock, FileText, Zap, RefreshCcw, Loader2, Paperclip, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function EmailCenter() {
@@ -19,6 +20,8 @@ export default function EmailCenter() {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [syncing, setSyncing] = useState(false);
 
   const { data: emailLogs = [], isLoading: logsLoading } = useQuery<EmailLog[]>({
     queryKey: ["/api/email/logs"],
@@ -52,6 +55,16 @@ export default function EmailCenter() {
     },
   });
 
+  const attachmentMetadata = attachments.map(file => ({
+    name: file.name,
+    size: file.size,
+    type: file.type,
+  }));
+
+  const handleAttachmentChange = (fileList: FileList | null) => {
+    setAttachments(fileList ? Array.from(fileList) : []);
+  };
+
   const handleSendEmail = async () => {
     if (!to || !subject || !body) {
       toast({
@@ -74,13 +87,13 @@ export default function EmailCenter() {
           to,
           subject,
           body,
-          sentBy: 'PA', // TODO: Get from current user
+          attachments: attachmentMetadata,
         }),
       });
 
       const data = await response.json();
 
-      if (!response.ok) {
+      if (!response.ok || !data.success) {
         throw new Error(data.error || 'Failed to send email');
       }
 
@@ -92,6 +105,8 @@ export default function EmailCenter() {
       setTo("");
       setSubject("");
       setBody("");
+      setAttachments([]);
+      queryClient.invalidateQueries({ queryKey: ["/api/email/logs"] });
     } catch (error: any) {
       toast({
         title: "Failed to send email",
@@ -115,19 +130,43 @@ export default function EmailCenter() {
     saveDraftMutation.mutate({ to, subject, body, createdBy: "current-user" });
   };
 
+  const handleSyncMailbox = async () => {
+    setSyncing(true);
+    try {
+      const response = await fetch('/api/email/sync', { method: 'POST' });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to sync mailbox');
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/email/logs"] });
+      toast({
+        title: "Mailbox synced",
+        description: `${data.synced || 0} messages processed from provider`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Sync failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const templates = [
     { id: "1", name: "Weekly Update", subject: "Weekly Team Update", uses: 12 },
     { id: "2", name: "Task Reminder", subject: "Reminder: Upcoming Task", uses: 8 },
     { id: "3", name: "Meeting Follow-up", subject: "Follow-up from our meeting", uses: 15 },
   ];
 
-  const formatTimestamp = (date: Date | null) => {
+  const formatTimestamp = (date: Date | string | null | undefined) => {
     if (!date) return "Unknown";
     return format(new Date(date), "MMM d, yyyy h:mm a");
   };
 
   const allHistory = [
-    ...emailLogs.map(log => ({ ...log, type: 'sent' as const })),
+    ...emailLogs.map(log => ({ ...log, type: (log.state as string) || 'sent', sentAt: log.sentAt })),
     ...drafts.map(draft => ({ ...draft, type: 'draft' as const, sentAt: draft.updatedAt }))
   ].sort((a, b) => {
     const dateA = a.sentAt ? new Date(a.sentAt).getTime() : 0;
@@ -209,16 +248,39 @@ export default function EmailCenter() {
                 />
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="attachments" className="flex items-center gap-2">
+                  <Paperclip className="h-4 w-4" /> Attachments
+                </Label>
+                <Input
+                  id="attachments"
+                  type="file"
+                  multiple
+                  onChange={(e) => handleAttachmentChange(e.target.files)}
+                />
+                {attachments.length > 0 && (
+                  <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                    {attachments.map((file) => (
+                      <Badge key={file.name} variant="secondary" className="flex items-center gap-2">
+                        <Paperclip className="h-3 w-3" />
+                        <span>{file.name}</span>
+                        <span className="text-xs">({Math.round(file.size / 1024)} KB)</span>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-2">
-                <Button 
-                  onClick={handleSendEmail} 
+                <Button
+                  onClick={handleSendEmail}
                   disabled={sending}
                   data-testid="button-send-email"
                 >
-                  {sending ? "Sending..." : "Send Email"}
+                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Email"}
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={handleSaveDraft}
                   disabled={saveDraftMutation.isPending}
                   data-testid="button-save-draft"
@@ -261,7 +323,15 @@ export default function EmailCenter() {
         </TabsContent>
 
         <TabsContent value="history" className="space-y-4">
-          <h3 className="text-lg font-semibold">Email History</h3>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Email History</h3>
+              <p className="text-sm text-muted-foreground">Synced inbound and outbound messages with statuses.</p>
+            </div>
+            <Button variant="outline" onClick={handleSyncMailbox} disabled={syncing} data-testid="button-sync-mailbox">
+              {syncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCcw className="h-4 w-4 mr-2" />} {syncing ? "Syncing" : "Sync now"}
+            </Button>
+          </div>
           {logsLoading || draftsLoading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
@@ -290,22 +360,53 @@ export default function EmailCenter() {
               {allHistory.map((item) => (
                 <Card key={item.id} data-testid={`email-log-${item.id}`}>
                   <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{item.subject}</p>
-                        <p className="text-sm text-muted-foreground">To: {item.to}</p>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <Avatar>
+                          <AvatarImage src={(item as any).sender?.avatar as string | undefined} />
+                          <AvatarFallback>
+                            {(((item as any).sender?.name as string | undefined)?.[0] || (item.from || "?"))[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{item.subject || "(no subject)"}</p>
+                            <Badge variant="outline" data-testid={`badge-${item.type}-${item.id}`}>
+                              {item.type}
+                            </Badge>
+                            {"syncStatus" in item && (
+                              <Badge variant="secondary">Sync: {(item as EmailLog).syncStatus}</Badge>
+                            )}
+                            {"retryCount" in item && (item as EmailLog).retryCount > 0 && (
+                              <Badge variant="outline" className="border-destructive text-destructive">Retry {(item as EmailLog).retryCount}</Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            From: {(item as any).from || (item as any).sender?.email || "Unknown"}
+                            {item.to ? ` · To: ${item.to}` : ""}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            {"direction" in item && <Badge variant="outline">{(item as EmailLog).direction}</Badge>}
+                            <span>{formatTimestamp(item.sentAt)}</span>
+                          </div>
+                          {"attachments" in item && (item as EmailLog).attachments?.length ? (
+                            <div className="flex flex-wrap gap-2 mt-2 text-xs text-muted-foreground">
+                              {(item as EmailLog).attachments!.map((attachment: any) => (
+                                <Badge key={attachment.name} variant="secondary" className="flex items-center gap-1">
+                                  <Paperclip className="h-3 w-3" />
+                                  <span>{attachment.name}</span>
+                                </Badge>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <Badge 
-                          variant="secondary" 
-                          className="mb-1"
-                          data-testid={`badge-${item.type}-${item.id}`}
-                        >
-                          {item.type}
-                        </Badge>
-                        <p className="text-xs text-muted-foreground">
-                          {formatTimestamp(item.sentAt)}
-                        </p>
+                      <div className="text-right text-sm text-muted-foreground">
+                        {item.type === 'draft' ? (
+                          <span>Draft saved</span>
+                        ) : (
+                          <span>{(item as EmailLog).status || 'sent'}</span>
+                        )}
                       </div>
                     </div>
                   </CardContent>

@@ -45,12 +45,19 @@ export const emailTemplates = pgTable("email_templates", {
 
 export const emailLogs = pgTable("email_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  from: text("from"),
   to: text("to").notNull(),
   subject: text("subject").notNull(),
   body: text("body").notNull(),
   sentBy: varchar("sent_by").notNull(),
+  sender: jsonb("sender").default(sql`'{}'::jsonb`),
   sentAt: timestamp("sent_at").defaultNow(),
   status: text("status").notNull().default("sent"),
+  state: text("state").notNull().default("sent"),
+  direction: text("direction").notNull().default("outbound"),
+  attachments: jsonb("attachments").default(sql`'[]'::jsonb`),
+  syncStatus: text("sync_status").notNull().default("pending"),
+  retryCount: integer("retry_count").notNull().default(0),
 });
 
 export const emailDrafts = pgTable("email_drafts", {
